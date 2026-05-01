@@ -1003,6 +1003,16 @@ td:first-child{color:var(--t);}tr:last-child td{border-bottom:none;}tr:hover td{
         </div>
       </div>
 
+      <div class="sec" id="sec-eventos">
+        <div class="g4">
+          <div class="card"><div class="cl">Total eventos</div><div class="cv b" id="ev-total">0</div></div>
+          <div class="card"><div class="cl">Proximos</div><div class="cv a" id="ev-prox">0</div></div>
+          <div class="card"><div class="cl">Completados</div><div class="cv g" id="ev-comp">0</div></div>
+          <div class="card"><div class="cl">Ingreso estimado</div><div class="cv" id="ev-ing">$0</div></div>
+        </div>
+        <div class="card"><table><thead><tr><th>Nombre</th><th>Inicio</th><th>Fin</th><th>Negocio</th><th>Tipo</th><th>Estado</th><th>Ingreso est.</th><th></th></tr></thead><tbody id="ev-tb"></tbody></table></div>
+      </div>
+
     </div>
   </div>
 </div>
@@ -1100,6 +1110,17 @@ td:first-child{color:var(--t);}tr:last-child td{border-bottom:none;}tr:hover td{
     <div class="ma"><button class="btn" onclick="closeModal()">Cancelar</button><button class="btn pri" id="btn-snpago">Registrar pago</button></div>
   </div>
 
+  <div class="modal" id="m-evento" style="display:none;">
+    <h3 id="ev-modal-title">Nuevo evento</h3>
+    <div class="fr" id="ev-neg-row"><label>Negocio</label><select id="ev-neg" style="width:100%;padding:7px;background:var(--s2);border:1px solid var(--bd);border-radius:5px;color:var(--t);font-size:12px;"></select></div>
+    <div class="fr"><label>Nombre del evento</label><input id="ev-nom" placeholder="Ej: Noche de jazz" style="width:100%;padding:7px;background:var(--s2);border:1px solid var(--bd);border-radius:5px;color:var(--t);font-size:12px;"></div>
+    <div class="fg2"><div class="fr"><label>Fecha inicio</label><input type="date" id="ev-fi" style="width:100%;padding:7px;background:var(--s2);border:1px solid var(--bd);border-radius:5px;color:var(--t);font-size:12px;"></div><div class="fr"><label>Fecha fin</label><input type="date" id="ev-ff" style="width:100%;padding:7px;background:var(--s2);border:1px solid var(--bd);border-radius:5px;color:var(--t);font-size:12px;"></div></div>
+    <div class="fg2"><div class="fr"><label>Tipo</label><select id="ev-tipo" style="width:100%;padding:7px;background:var(--s2);border:1px solid var(--bd);border-radius:5px;color:var(--t);font-size:12px;"><option value="concierto">Concierto</option><option value="cena_especial">Cena especial</option><option value="promocion">Promocion</option><option value="privado">Privado</option><option value="otro" selected>Otro</option></select></div><div class="fr"><label>Estado</label><select id="ev-estado" style="width:100%;padding:7px;background:var(--s2);border:1px solid var(--bd);border-radius:5px;color:var(--t);font-size:12px;"><option value="planeado" selected>Planeado</option><option value="confirmado">Confirmado</option><option value="en_curso">En curso</option><option value="completado">Completado</option><option value="cancelado">Cancelado</option></select></div></div>
+    <div class="fg2"><div class="fr"><label>Ingreso estimado ($)</label><input type="number" id="ev-ing-est" step="0.01" placeholder="0.00" style="width:100%;padding:7px;background:var(--s2);border:1px solid var(--bd);border-radius:5px;color:var(--t);font-size:12px;"></div><div class="fr"><label>Aforo estimado</label><input type="number" id="ev-aforo" placeholder="100" style="width:100%;padding:7px;background:var(--s2);border:1px solid var(--bd);border-radius:5px;color:var(--t);font-size:12px;"></div></div>
+    <div class="fr"><label>Descripcion</label><textarea id="ev-desc" placeholder="Detalles del evento..." style="width:100%;padding:7px;background:var(--s2);border:1px solid var(--bd);border-radius:5px;color:var(--t);font-size:12px;height:60px;resize:vertical;"></textarea></div>
+    <div class="ma"><button class="btn" onclick="closeModal()">Cancelar</button><button class="btn pri" onclick="saveEvento()">Guardar</button></div>
+  </div>
+
 </div>
 
 <script type="module">
@@ -1126,9 +1147,9 @@ const ROL_TEXT={propietario:'var(--a)',director:'var(--a4)',admin_negocio:'var(-
 const RAZON_SOCIAL='SE ARMO LA MACHAKA SAPI de CV';
 
 const NAV_BY_ROL={
-  propietario:[{s:'dashboard',i:'◈',l:'Dashboard',g:'Resumen'},{s:'tesoreria',i:'◆',l:'Tesorería',g:'Operación'},{s:'nominas',i:'◑',l:'Nóminas',g:'Operación'},{s:'mi-negocio',i:'◈',l:'Mi negocio',g:'Operación'},{s:'inv-cocina',i:'🍽',l:'Cocina',g:'Inventario'},{s:'inv-barras',i:'🍹',l:'Barras',g:'Inventario'},{s:'reporte-inv',i:'◉',l:'Reporte inventarios',g:'Inventario'},{s:'reporte-semanal',i:'◑',l:'Reporte Semanal',g:'Reportes'},{s:'cierre-caja',i:'💰',l:'Caja',g:'Operación'},{s:'negocios',i:'◎',l:'Negocios',g:'Config'},{s:'facturas',i:'▣',l:'Facturas',g:'Datos'},{s:'facturas-emitidas',i:'◩',l:'Facturas Emitidas',g:'Fiscal'},{s:'balance-fiscal',i:'◬',l:'Balance Fiscal',g:'Fiscal'},{s:'conciliacion-operativa',i:'◫',l:'Conciliacion Operativa',g:'Fiscal'},{s:'ventas',i:'◐',l:'Ventas',g:'Datos'},{s:'auditoria',i:'*',l:'Auditoria',g:'Operacion'},{s:'usuarios',i:'⊙',l:'Usuarios',g:'Config'}],
-  director:[{s:'dashboard',i:'◈',l:'Dashboard',g:'Resumen'},{s:'tesoreria',i:'◆',l:'Tesorería',g:'Operación'},{s:'reporte-inv',i:'◉',l:'Reporte inventarios',g:'Reportes'},{s:'reporte-semanal',i:'◑',l:'Reporte Semanal',g:'Reportes'},{s:'facturas',i:'▣',l:'Facturas',g:'Datos'},{s:'balance-fiscal',i:'◬',l:'Balance Fiscal',g:'Fiscal'},{s:'conciliacion-operativa',i:'◫',l:'Conciliacion Operativa',g:'Fiscal'},{s:'ventas',i:'◐',l:'Ventas',g:'Datos'}],
-  admin_negocio:[{s:'mi-negocio',i:'◈',l:'Mi negocio',g:'Operación'},{s:'inv-cocina',i:'🍽',l:'POS Cocina',g:'Inventario'},{s:'inv-barras',i:'🍹',l:'POS Barras',g:'Inventario'},{s:'nominas',i:'◑',l:'Nóminas',g:'Operación'},{s:'facturas-emitidas',i:'◩',l:'Facturas Emitidas',g:'Fiscal'},{s:'balance-fiscal',i:'◬',l:'Balance Fiscal',g:'Fiscal'},{s:'ventas',i:'◐',l:'Ventas',g:'Datos'}],
+  propietario:[{s:'dashboard',i:'◈',l:'Dashboard',g:'Resumen'},{s:'tesoreria',i:'◆',l:'Tesorería',g:'Operación'},{s:'nominas',i:'◑',l:'Nóminas',g:'Operación'},{s:'mi-negocio',i:'◈',l:'Mi negocio',g:'Operación'},{s:'eventos',i:'◆',l:'Eventos',g:'Operación'},{s:'inv-cocina',i:'🍽',l:'Cocina',g:'Inventario'},{s:'inv-barras',i:'🍹',l:'Barras',g:'Inventario'},{s:'reporte-inv',i:'◉',l:'Reporte inventarios',g:'Inventario'},{s:'reporte-semanal',i:'◑',l:'Reporte Semanal',g:'Reportes'},{s:'cierre-caja',i:'💰',l:'Caja',g:'Operación'},{s:'negocios',i:'◎',l:'Negocios',g:'Config'},{s:'facturas',i:'▣',l:'Facturas',g:'Datos'},{s:'facturas-emitidas',i:'◩',l:'Facturas Emitidas',g:'Fiscal'},{s:'balance-fiscal',i:'◬',l:'Balance Fiscal',g:'Fiscal'},{s:'conciliacion-operativa',i:'◫',l:'Conciliacion Operativa',g:'Fiscal'},{s:'ventas',i:'◐',l:'Ventas',g:'Datos'},{s:'auditoria',i:'*',l:'Auditoria',g:'Operacion'},{s:'usuarios',i:'⊙',l:'Usuarios',g:'Config'}],
+  director:[{s:'dashboard',i:'◈',l:'Dashboard',g:'Resumen'},{s:'tesoreria',i:'◆',l:'Tesorería',g:'Operación'},{s:'eventos',i:'◆',l:'Eventos',g:'Operación'},{s:'reporte-inv',i:'◉',l:'Reporte inventarios',g:'Reportes'},{s:'reporte-semanal',i:'◑',l:'Reporte Semanal',g:'Reportes'},{s:'facturas',i:'▣',l:'Facturas',g:'Datos'},{s:'balance-fiscal',i:'◬',l:'Balance Fiscal',g:'Fiscal'},{s:'conciliacion-operativa',i:'◫',l:'Conciliacion Operativa',g:'Fiscal'},{s:'ventas',i:'◐',l:'Ventas',g:'Datos'}],
+  admin_negocio:[{s:'mi-negocio',i:'◈',l:'Mi negocio',g:'Operación'},{s:'eventos',i:'◆',l:'Eventos',g:'Operación'},{s:'inv-cocina',i:'🍽',l:'POS Cocina',g:'Inventario'},{s:'inv-barras',i:'🍹',l:'POS Barras',g:'Inventario'},{s:'nominas',i:'◑',l:'Nóminas',g:'Operación'},{s:'facturas-emitidas',i:'◩',l:'Facturas Emitidas',g:'Fiscal'},{s:'balance-fiscal',i:'◬',l:'Balance Fiscal',g:'Fiscal'},{s:'ventas',i:'◐',l:'Ventas',g:'Datos'}],
   chef:[{s:'inv-cocina',i:'🍽',l:'Inventario cocina',g:'Mi trabajo'}],
   jefe_barras:[{s:'inv-barras',i:'🍹',l:'Inventario barras',g:'Mi trabajo'},{s:'ventas',i:'◐',l:'Desplazamiento',g:'Consulta'}],
   compras:[{s:'facturas',i:'▣',l:'Facturas',g:'Mi trabajo'},{s:'facturas-emitidas',i:'◩',l:'Facturas Emitidas',g:'Fiscal'}],
@@ -1137,7 +1158,7 @@ const NAV_BY_ROL={
   auxiliar_admin:[{s:'facturas-emitidas',i:'◩',l:'Facturas Emitidas',g:'Mi trabajo'}]
 };
 
-const SMETA={dashboard:{t:'Dashboard',s:'Visión consolidada'},requisiciones:{t:'Requisiciones',s:'Solicitudes de fondos'},tesoreria:{t:'Tesorería',s:'Cuenta maestra y distribución por negocio'},negocios:{t:'Mis negocios',s:'Cuentas y administradores'},facturas:{t:'Facturas de compra',s:'Registro de compras — '+RAZON_SOCIAL},'facturas-emitidas':{t:'Facturas Emitidas',s:'CFDI emitidos — '+RAZON_SOCIAL},'balance-fiscal':{t:'Balance Fiscal',s:'ISR estimado, IVA y conciliacion consolidada — '+RAZON_SOCIAL},'conciliacion-operativa':{t:'Conciliacion Operativa',s:'Compras vs ventas POS vs inventario por sucursal'},ventas:{t:'Ventas',s:'Desplazamiento de productos'},usuarios:{t:'Usuarios',s:'Accesos al sistema'},'mi-negocio':{t:'Mi negocio',s:'Requisiciones y reportes'},'inv-cocina':{t:'Inventario cocina',s:'Inventario fisico del chef y POS El Cheff'},'inv-barras':{t:'Inventario barras',s:'Inventario fisico y POS El Cheff'},'reporte-inv':{t:'Reporte inventarios',s:'Comparativo fisico, POS y auditoria'},'reporte-semanal':{t:'Reporte Semanal',s:'Analisis semanal MANOUK — ventas, nomina, proveedores, conciliacion'},'cierre-caja':{t:'Cierre de caja',s:'POS El Cheff y conciliación'},nominas:{t:'Nóminas',s:'Empleados y pagos de nómina por negocio'},auditoria:{t:'Auditoria',s:'Inventario fisico independiente por sucursal'}};
+const SMETA={dashboard:{t:'Dashboard',s:'Visión consolidada'},requisiciones:{t:'Requisiciones',s:'Solicitudes de fondos'},tesoreria:{t:'Tesorería',s:'Cuenta maestra y distribución por negocio'},negocios:{t:'Mis negocios',s:'Cuentas y administradores'},facturas:{t:'Facturas de compra',s:'Registro de compras — '+RAZON_SOCIAL},'facturas-emitidas':{t:'Facturas Emitidas',s:'CFDI emitidos — '+RAZON_SOCIAL},'balance-fiscal':{t:'Balance Fiscal',s:'ISR estimado, IVA y conciliacion consolidada — '+RAZON_SOCIAL},'conciliacion-operativa':{t:'Conciliacion Operativa',s:'Compras vs ventas POS vs inventario por sucursal'},ventas:{t:'Ventas',s:'Desplazamiento de productos'},usuarios:{t:'Usuarios',s:'Accesos al sistema'},'mi-negocio':{t:'Mi negocio',s:'Requisiciones y reportes'},'inv-cocina':{t:'Inventario cocina',s:'Inventario fisico del chef y POS El Cheff'},'inv-barras':{t:'Inventario barras',s:'Inventario fisico y POS El Cheff'},'reporte-inv':{t:'Reporte inventarios',s:'Comparativo fisico, POS y auditoria'},'reporte-semanal':{t:'Reporte Semanal',s:'Analisis semanal MANOUK — ventas, nomina, proveedores, conciliacion'},'cierre-caja':{t:'Cierre de caja',s:'POS El Cheff y conciliación'},nominas:{t:'Nóminas',s:'Empleados y pagos de nómina por negocio'},auditoria:{t:'Auditoria',s:'Inventario fisico independiente por sucursal'},eventos:{t:'Eventos',s:'Registro de eventos y actividades por negocio'}};
 
 /* ── AUTH + UTILIDADES BASICAS ───────────────────────────────────── */
 
@@ -1193,13 +1214,13 @@ window.showSec=function(id,el){
   el.classList.add('active');window._curSec=id;
   document.getElementById('PT').textContent=SMETA[id]?.t||id;
   document.getElementById('PS').textContent=SMETA[id]?.s||'';
-  const R={dashboard:renderDash,requisiciones:renderRequisiciones,tesoreria:renderTesoreria,negocios:renderNegocios,facturas:renderFacturas,'facturas-emitidas':renderFacturasEmitidas,'balance-fiscal':renderBalanceFiscal,'conciliacion-operativa':renderConciliacionOperativa,ventas:renderVentas,usuarios:renderUsuarios,'mi-negocio':renderMiNegocio,'inv-cocina':renderInvCocina,'inv-barras':renderInvBarras,'reporte-inv':renderReporteInv,'reporte-semanal':renderReporteSemanal,'cierre-caja':renderCierre,nominas:renderNominas,auditoria:renderAuditoria};
+  const R={dashboard:renderDash,requisiciones:renderRequisiciones,tesoreria:renderTesoreria,negocios:renderNegocios,facturas:renderFacturas,'facturas-emitidas':renderFacturasEmitidas,'balance-fiscal':renderBalanceFiscal,'conciliacion-operativa':renderConciliacionOperativa,ventas:renderVentas,usuarios:renderUsuarios,eventos:renderEventos,'mi-negocio':renderMiNegocio,'inv-cocina':renderInvCocina,'inv-barras':renderInvBarras,'reporte-inv':renderReporteInv,'reporte-semanal':renderReporteSemanal,'cierre-caja':renderCierre,nominas:renderNominas,auditoria:renderAuditoria};
   if(R[id])R[id]();
 };
 
 window.openAdd=function(){
   if(userData.rol==='director')return;
-  const map={dashboard:'negocio',requisiciones:'requisicion',negocios:'negocio',facturas:'factura',ventas:null,usuarios:'usuario','mi-negocio':null,'inv-cocina':null,'inv-barras':null,'reporte-inv':null,'reporte-semanal':null,'cierre-caja':null,tesoreria:'tesoreria-dep'};
+  const map={dashboard:'negocio',requisiciones:'requisicion',negocios:'negocio',facturas:'factura',ventas:null,usuarios:'usuario',eventos:'evento','mi-negocio':null,'inv-cocina':null,'inv-barras':null,'reporte-inv':null,'reporte-semanal':null,'cierre-caja':null,tesoreria:'tesoreria-dep'};
   const t=map[window._curSec];if(t)window.openModalDirect(t);
 };
 
@@ -1209,13 +1230,14 @@ window.openModalDirect=function(type){
   const m=document.getElementById('m-'+type);if(!m){closeModal();return;}
   m.style.display='block';
   const today=new Date().toISOString().split('T')[0];
-  ['f-fecha','v-fecha','ic-fecha','ib-fecha','cc-fecha'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=today;});
+  ['f-fecha','v-fecha','ic-fecha','ib-fecha','cc-fecha','ev-fi','ev-ff'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=today;});
   if(type==='usuario'){document.getElementById('u-neg').innerHTML=negocios.map(n=>"<option value=\""+(n.id)+"\">"+(n.nombre)+"</option>").join('');toggleNegSel();}
   if(type==='empleado'){const esBoss=userData.rol==='propietario';document.getElementById('empl-ng-row').style.display=esBoss?'':'none';if(esBoss)document.getElementById('empl-ng').innerHTML=negocios.map(n=>"<option value=\""+(n.id)+"\">"+(n.nombre)+"</option>").join('');}
   if(type==='nomina-pago'){const emps=window._nomEmps||[];document.getElementById('npg-emp').innerHTML='<option value="">Selecciona empleado</option>'+emps.map(e=>"<option value=\""+e.id+"\" data-nid=\""+e.negocioId+"\" data-sal=\""+(e.salarioBase||0)+"\">"+e.nombre+"</option>").join('');['npg-m','npg-x','npg-n'].forEach(function(id){const el=document.getElementById(id);if(el)el.value='';});calcNomPago();}
   if(type==='requisicion'){const el=document.getElementById('req-neg-row');if(el)el.style.display=['propietario','director'].includes(userData.rol)?'':'none';const ns=document.getElementById('req-neg');if(ns)ns.innerHTML=negocios.map(n=>"<option value=\""+n.id+"\">"+n.nombre+"</option>").join('');const ws=getWeekStart(new Date().toISOString().split('T')[0]);const ws2=document.getElementById('req-sem');if(ws2&&!ws2.value)ws2.value=ws;}
   if(type==='tesoreria-dep'){const ns=document.getElementById('td-neg');if(ns)ns.innerHTML=negocios.map(n=>"<option value=\""+n.id+"\">"+n.nombre+"</option>").join('');const f=document.getElementById('td-fecha');if(f&&!f.value)f.value=new Date().toISOString().split('T')[0];}
   if(type==='venta'){const negId=userData.negocioId||negocios[0]?.id;sucPoblarSelect(negId,'v-suc-sel','v-suc-row');}
+  if(type==='evento'){evEditId=null;document.getElementById('ev-modal-title').textContent='Nuevo evento';var isBoss=['propietario','director'].includes(userData.rol);document.getElementById('ev-neg-row').style.display=isBoss?'':'none';if(isBoss)document.getElementById('ev-neg').innerHTML=negocios.map(function(n){return '<option value="'+n.id+'">'+n.nombre+'</option>';}).join('');document.getElementById('ev-tipo').value='otro';document.getElementById('ev-estado').value='planeado';['ev-nom','ev-desc','ev-ing-est','ev-aforo'].forEach(function(fid){var ef=document.getElementById(fid);if(ef)ef.value='';});}
 };
 
 window.closeModal=function(){document.getElementById('mbg').classList.remove('open');document.querySelectorAll('.modal').forEach(m=>m.style.display='none');};
@@ -4773,6 +4795,89 @@ window.analizarReqPDF=async function(input){
     }
   };
   reader.readAsArrayBuffer(file);
+};
+
+/* ── EVENTOS ─────────────────────────────────────────────────────── */
+
+var evEditId=null;
+
+async function renderEventos(){
+  var negId=userData.negocioId;
+  var snap;
+  if(negId){
+    snap=await getDocs(query(collection(db,'eventos'),where('negocioId','==',negId)));
+  } else {
+    snap=await getDocs(query(collection(db,'eventos'),orderBy('fechaInicio','desc')));
+  }
+  var eventos=snap.docs.map(function(d){return Object.assign({id:d.id},d.data());});
+  if(negId)eventos.sort(function(a,b){return (b.fechaInicio||'')>(a.fechaInicio||'')?1:-1;});
+  var hoy=new Date().toISOString().split('T')[0];
+  var prox=eventos.filter(function(e){return e.fechaInicio>=hoy&&e.estado!=='cancelado';}).length;
+  var comp=eventos.filter(function(e){return e.estado==='completado';}).length;
+  var ingTotal=eventos.reduce(function(a,e){return a+(e.ingresoEstimado||0);},0);
+  document.getElementById('ev-total').textContent=eventos.length;
+  document.getElementById('ev-prox').textContent=prox;
+  document.getElementById('ev-comp').textContent=comp;
+  document.getElementById('ev-ing').textContent='$'+ingTotal.toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2});
+  var TIPOC={concierto:'p',cena_especial:'a',promocion:'g',privado:'b',otro:''};
+  var ESTC={planeado:'b',confirmado:'a',en_curso:'g',completado:'g',cancelado:'r'};
+  var tb=document.getElementById('ev-tb');
+  if(!eventos.length){tb.innerHTML='<tr><td colspan="8" class="empty">Sin eventos registrados</td></tr>';return;}
+  tb.innerHTML=eventos.map(function(e){
+    var tl=(e.tipo||'otro').replace('_',' ');
+    var tc=TIPOC[e.tipo]||'';
+    var ec=ESTC[e.estado]||'';
+    var ing=e.ingresoEstimado?'$'+Number(e.ingresoEstimado).toLocaleString('es-MX',{minimumFractionDigits:2}):'—';
+    var btns='<button class="btn" onclick="editEvento(\''+e.id+'\')" style="font-size:10px;padding:3px 7px;">Editar</button>';
+    if(userData.rol!=='director')btns+=' <button class="btn red" onclick="deleteEvento(\''+e.id+'\')" style="font-size:10px;padding:3px 7px;">&#215;</button>';
+    return '<tr><td>'+(e.nombre||'—')+'</td><td>'+(e.fechaInicio||'—')+'</td><td>'+(e.fechaFin||e.fechaInicio||'—')+'</td><td style="color:var(--t2);">'+getNegNom(e.negocioId)+'</td><td><span class="badge '+tc+'">'+tl+'</span></td><td><span class="badge '+ec+'">'+(e.estado||'—')+'</span></td><td>'+ing+'</td><td style="display:flex;gap:4px;">'+btns+'</td></tr>';
+  }).join('');
+}
+
+window.saveEvento=async function(){
+  var nom=document.getElementById('ev-nom').value.trim();
+  var fi=document.getElementById('ev-fi').value;
+  if(!nom||!fi){alert('Nombre y fecha de inicio son obligatorios');return;}
+  var ff=document.getElementById('ev-ff').value||fi;
+  var tipo=document.getElementById('ev-tipo').value;
+  var estado=document.getElementById('ev-estado').value;
+  var desc=document.getElementById('ev-desc').value.trim();
+  var ing=parseFloat(document.getElementById('ev-ing-est').value)||0;
+  var aforo=parseInt(document.getElementById('ev-aforo').value)||0;
+  var negId=document.getElementById('ev-neg').value||userData.negocioId||(negocios[0]&&negocios[0].id);
+  var data={nombre:nom,fechaInicio:fi,fechaFin:ff,tipo:tipo,estado:estado,descripcion:desc,ingresoEstimado:ing,aforoEstimado:aforo,negocioId:negId,negocioNombre:getNegNom(negId),actualizadoEn:serverTimestamp()};
+  if(evEditId){
+    await updateDoc(doc(db,'eventos',evEditId),data);
+  } else {
+    data.registradoPor=userData.nombre;
+    data.creadoEn=serverTimestamp();
+    await addDoc(collection(db,'eventos'),data);
+  }
+  evEditId=null;closeModal();renderEventos();
+};
+
+window.editEvento=async function(id){
+  var snap2=await getDoc(doc(db,'eventos',id));
+  if(!snap2.exists())return;
+  var e=snap2.data();
+  openModalDirect('evento');
+  evEditId=id;
+  document.getElementById('ev-modal-title').textContent='Editar evento';
+  document.getElementById('ev-nom').value=e.nombre||'';
+  document.getElementById('ev-fi').value=e.fechaInicio||'';
+  document.getElementById('ev-ff').value=e.fechaFin||'';
+  document.getElementById('ev-tipo').value=e.tipo||'otro';
+  document.getElementById('ev-estado').value=e.estado||'planeado';
+  document.getElementById('ev-desc').value=e.descripcion||'';
+  document.getElementById('ev-ing-est').value=e.ingresoEstimado||'';
+  document.getElementById('ev-aforo').value=e.aforoEstimado||'';
+  if(e.negocioId)document.getElementById('ev-neg').value=e.negocioId;
+};
+
+window.deleteEvento=async function(id){
+  if(!confirm('Eliminar este evento?'))return;
+  await deleteDoc(doc(db,'eventos',id));
+  renderEventos();
 };
 
 /* ── AUTH STATE ───────────────────────────────────────────────────── */
