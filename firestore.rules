@@ -1,8 +1,280 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // ── Helpers ──────────────────────────────────────────────────────────────
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    function uid() {
+      return request.auth.uid;
+    }
+
+    function isOwner(resource) {
+      return resource.data.uid == uid();
+    }
+
+    function isSameUser(userId) {
+      return uid() == userId;
+    }
+
+    function userDoc() {
+      return get(/databases/$(database)/documents/usuarios/$(uid())).data;
+    }
+
+    function isAdmin() {
+      return isAuth() && userDoc().rol == 'admin';
+    }
+
+    function isSuperAdmin() {
+      return isAuth() && userDoc().rol == 'superadmin';
+    }
+
+    function belongsToBusiness(negocioId) {
+      return isAuth() && userDoc().negocioId == negocioId;
+    }
+
+    function isManagerOrAbove() {
+      return isAuth() && userDoc().rol in ['admin', 'superadmin', 'gerente'];
+    }
+
+    function hasField(field) {
+      return field in request.resource.data;
+    }
+
+    function notChanging(field) {
+      return !(field in request.resource.data) || request.resource.data[field] == resource.data[field];
+    }
+
+    function isValidString(field, minLen, maxLen) {
+      return hasField(field)
+        && request.resource.data[field] is string
+        && request.resource.data[field].size() >= minLen
+        && request.resource.data[field].size() <= maxLen;
+    }
+
+    function isPositiveNumber(field) {
+      return hasField(field)
+        && request.resource.data[field] is number
+        && request.resource.data[field] >= 0;
+    }
+
+    // ── /usuarios/{userId} ───────────────────────────────────────────────────
+    match /usuarios/{userId} {
+      allow read: if isAuth() && (isSameUser(userId) || isAdmin() || isSuperAdmin());
+
+      allow create: if isAuth()
+        && isSameUser(userId)
+        && isValidString('nombre', 2, 100)
+        && isValidString('email', 5, 200)
+        && request.resource.data.rol in ['empleado', 'gerente', 'admin']
+        && hasField('negocioId')
+        && hasField('creadoEn');
+
+      allow update: if isAuth()
+        && (isSameUser(userId) || isAdmin() || isSuperAdmin())
+        && notChanging('uid')
+        && notChanging('email')
+        && notChanging('negocioId');
+
+      allow delete: if isSuperAdmin();
+    }
+
+    // ── /negocios/{negocioId} ─────────────────────────────────────────────────
+    match /negocios/{negocioId} {
+      allow read: if isAuth() && belongsToBusiness(negocioId);
+
+      allow create: if isSuperAdmin()
+        && isValidString('nombre', 2, 150)
+        && hasField('plan')
+        && request.resource.data.plan in ['basico', 'profesional', 'enterprise']
+        && hasField('creadoEn')
+        && hasField('activo');
+
+      allow update: if isAuth()
+        && (isAdmin() || isSuperAdmin())
+        && belongsToBusiness(negocioId)
+        && notChanging('id');
+
+      allow delete: if isSuperAdmin();
+
+      // Sub-colecciones del negocio heredan acceso del negocio
+      match /{subcollection}/{docId} {
+        allow read, write: if isAuth() && belongsToBusiness(negocioId);
+      }
+    }
+
+    // ── /eventos/{eventoId} ──────────────────────────────────────────────────
+    match /eventos/{eventoId} {
+      allow read: if isAuth() && belongsToBusiness(resource.data.negocioId);
+
+      allow create: if isAuth()
+        && isManagerOrAbove()
+        && isValidString('nombre', 2, 200)
+        && hasField('negocioId')
+        && hasField('fecha')
+        && hasField('tipo')
+        && request.resource.data.tipo in ['boda', 'quinceañera', 'corporativo', 'otro']
+        && isPositiveNumber('presupuesto')
+        && hasField('creadoEn')
+        && hasField('creadoPor')
+        && request.resource.data.creadoPor == uid();
+
+      allow update: if isAuth()
+        && isManagerOrAbove()
+        && belongsToBusiness(resource.data.negocioId)
+        && notChanging('negocioId')
+        && notChanging('creadoPor');
+
+      allow delete: if isAuth()
+        && (isAdmin() || isSuperAdmin())
+        && belongsToBusiness(resource.data.negocioId);
+    }
+
+    // ── /ventas/{ventaId} ────────────────────────────────────────────────────
+    match /ventas/{ventaId} {
+      allow read: if isAuth() && belongsToBusiness(resource.data.negocioId);
+
+      allow create: if isAuth()
+        && hasField('negocioId')
+        && belongsToBusiness(request.resource.data.negocioId)
+        && isPositiveNumber('total')
+        && hasField('items')
+        && request.resource.data.items.size() > 0
+        && hasField('estado')
+        && request.resource.data.estado in ['pendiente', 'completada', 'cancelada']
+        && hasField('creadoEn')
+        && hasField('creadoPor')
+        && request.resource.data.creadoPor == uid();
+
+      allow update: if isAuth()
+        && isManagerOrAbove()
+        && belongsToBusiness(resource.data.negocioId)
+        && notChanging('negocioId')
+        && notChanging('creadoPor')
+        && notChanging('total');
+
+      allow delete: if isAdmin()
+        && belongsToBusiness(resource.data.negocioId);
+    }
+
+    // ── /gastos/{gastoId} ────────────────────────────────────────────────────
+    match /gastos/{gastoId} {
+      allow read: if isAuth() && belongsToBusiness(resource.data.negocioId);
+
+      allow create: if isAuth()
+        && hasField('negocioId')
+        && belongsToBusiness(request.resource.data.negocioId)
+        && isPositiveNumber('monto')
+        && isValidString('concepto', 2, 300)
+        && hasField('categoria')
+        && hasField('fecha')
+        && hasField('creadoEn')
+        && hasField('creadoPor')
+        && request.resource.data.creadoPor == uid();
+
+      allow update: if isAuth()
+        && isManagerOrAbove()
+        && belongsToBusiness(resource.data.negocioId)
+        && notChanging('negocioId')
+        && notChanging('creadoPor');
+
+      allow delete: if isAdmin()
+        && belongsToBusiness(resource.data.negocioId);
+    }
+
+    // ── /empleados/{empleadoId} ──────────────────────────────────────────────
+    match /empleados/{empleadoId} {
+      allow read: if isAuth() && belongsToBusiness(resource.data.negocioId);
+
+      allow create: if isAuth()
+        && isManagerOrAbove()
+        && hasField('negocioId')
+        && belongsToBusiness(request.resource.data.negocioId)
+        && isValidString('nombre', 2, 100)
+        && isValidString('puesto', 2, 100)
+        && isPositiveNumber('salario')
+        && hasField('creadoEn');
+
+      allow update: if isAuth()
+        && isManagerOrAbove()
+        && belongsToBusiness(resource.data.negocioId)
+        && notChanging('negocioId');
+
+      allow delete: if isAdmin()
+        && belongsToBusiness(resource.data.negocioId);
+    }
+
+    // ── /nominas/{nominaId} ──────────────────────────────────────────────────
+    match /nominas/{nominaId} {
+      allow read: if isAuth()
+        && (isManagerOrAbove() || isOwner(resource))
+        && belongsToBusiness(resource.data.negocioId);
+
+      allow create: if isAuth()
+        && isManagerOrAbove()
+        && hasField('negocioId')
+        && belongsToBusiness(request.resource.data.negocioId)
+        && isPositiveNumber('totalBruto')
+        && isPositiveNumber('totalNeto')
+        && hasField('periodo')
+        && hasField('creadoEn')
+        && hasField('creadoPor')
+        && request.resource.data.creadoPor == uid();
+
+      allow update: if isAdmin()
+        && belongsToBusiness(resource.data.negocioId)
+        && notChanging('negocioId')
+        && notChanging('creadoPor');
+
+      allow delete: if isSuperAdmin();
+    }
+
+    // ── /inventario/{itemId} ─────────────────────────────────────────────────
+    match /inventario/{itemId} {
+      allow read: if isAuth() && belongsToBusiness(resource.data.negocioId);
+
+      allow create: if isAuth()
+        && hasField('negocioId')
+        && belongsToBusiness(request.resource.data.negocioId)
+        && isValidString('nombre', 2, 200)
+        && isPositiveNumber('cantidad')
+        && isPositiveNumber('precioUnitario')
+        && hasField('creadoEn');
+
+      allow update: if isAuth()
+        && belongsToBusiness(resource.data.negocioId)
+        && notChanging('negocioId');
+
+      allow delete: if isManagerOrAbove()
+        && belongsToBusiness(resource.data.negocioId);
+    }
+
+    // ── /reportes/{reporteId} ────────────────────────────────────────────────
+    match /reportes/{reporteId} {
+      allow read: if isAuth()
+        && isManagerOrAbove()
+        && belongsToBusiness(resource.data.negocioId);
+
+      allow create: if isAuth()
+        && isManagerOrAbove()
+        && hasField('negocioId')
+        && belongsToBusiness(request.resource.data.negocioId)
+        && hasField('tipo')
+        && hasField('periodo')
+        && hasField('creadoEn')
+        && hasField('creadoPor')
+        && request.resource.data.creadoPor == uid();
+
+      allow update: if false;
+      allow delete: if isAdmin()
+        && belongsToBusiness(resource.data.negocioId);
+    }
+
+    // ── Bloquear todo lo demás ────────────────────────────────────────────────
     match /{document=**} {
-      allow read, write: if request.auth != null;
+      allow read, write: if false;
     }
   }
 }
