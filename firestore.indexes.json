@@ -1,0 +1,25 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "facturas",
+      "queryScope": "COLLECTION",
+      "fields": [{"fieldPath": "negocioId","order": "ASCENDING"},{"fieldPath": "fecha","order": "DESCENDING"}]
+    },
+    {
+      "collectionGroup": "ventas",
+      "queryScope": "COLLECTION",
+      "fields": [{"fieldPath": "negocioId","order": "ASCENDING"},{"fieldPath": "fecha","order": "DESCENDING"}]
+    },
+    {
+      "collectionGroup": "requisiciones",
+      "queryScope": "COLLECTION",
+      "fields": [{"fieldPath": "negocioId","order": "ASCENDING"},{"fieldPath": "estado","order": "ASCENDING"}]
+    },
+    {
+      "collectionGroup": "reportes",
+      "queryScope": "COLLECTION",
+      "fields": [{"fieldPath": "negocioId","order": "ASCENDING"},{"fieldPath": "semana","order": "DESCENDING"}]
+    }
+  ],
+  "fieldOverrides": []
+}
