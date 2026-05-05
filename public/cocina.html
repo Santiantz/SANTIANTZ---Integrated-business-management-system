@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>COCINA — CostControl</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0a08;--bg2:#141410;--bg3:#1e1e1a;--gold:#e8c87a;--white:#f0ede6;--gray:#888880;--verde:#4caf7d;--rojo:#e05252;--naranja:#e08a3c;--borde:rgba(232,200,122,.1);--r:12px;--r2:8px;--font:'DM Sans','Segoe UI',sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--white);font-family:var(--font);overflow:hidden}
+button{font-family:var(--font);cursor:pointer;border:none;outline:none}
+/* Header */
+.kds-header{height:56px;background:var(--bg2);border-bottom:1px solid var(--borde);display:flex;align-items:center;padding:0 20px;gap:16px;flex-shrink:0}
+.kds-logo{font-size:11px;font-weight:800;letter-spacing:3px;color:var(--rojo);text-transform:uppercase}
+.kds-titulo{font-size:16px;font-weight:800;color:var(--white)}
+.kds-reloj{font-size:20px;font-weight:800;font-family:monospace;color:var(--gold);margin-left:auto}
+.kds-contador{background:rgba(224,82,82,.15);color:var(--rojo);border:1px solid rgba(224,82,82,.3);border-radius:10px;font-size:11px;font-weight:700;padding:3px 10px}
+.kds-suc{font-size:11px;color:var(--gray)}
+/* Grid comandas */
+.kds-grid{flex:1;overflow-y:auto;padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;align-content:start}
+.body-wrap{display:flex;flex-direction:column;height:100vh}
+/* Comanda card */
+.comanda-card{background:var(--bg2);border:2px solid var(--borde);border-radius:var(--r);display:flex;flex-direction:column;overflow:hidden;transition:border-color .3s}
+.comanda-card.urgente{border-color:var(--rojo);animation:parpadeo 1.5s ease-in-out infinite}
+.comanda-card.en_proceso{border-color:var(--naranja)}
+@keyframes parpadeo{0%,100%{border-color:var(--rojo)}50%{border-color:rgba(224,82,82,.3)}}
+.cc-header{padding:12px 14px;border-bottom:1px solid var(--borde);display:flex;align-items:center;gap:10px}
+.cc-mesa{font-size:16px;font-weight:800;color:var(--white)}
+.cc-mesero{font-size:11px;color:var(--gray);flex:1}
+.cc-timer{font-size:12px;font-weight:700;font-family:monospace;padding:3px 8px;border-radius:6px;background:var(--bg3)}
+.cc-timer.normal{color:var(--verde)}
+.cc-timer.advertencia{color:var(--naranja)}
+.cc-timer.urgente{color:var(--rojo)}
+.cc-items{padding:10px 14px;flex:1}
+.cc-item{display:flex;gap:10px;align-items:flex-start;padding:6px 0;border-bottom:1px solid var(--borde)}
+.cc-item:last-child{border:none}
+.cc-cant{font-size:18px;font-weight:900;color:var(--gold);min-width:28px;line-height:1}
+.cc-info{flex:1}
+.cc-nombre{font-size:14px;font-weight:700;line-height:1.2}
+.cc-mods{font-size:11px;color:var(--naranja);margin-top:3px;line-height:1.4}
+.cc-footer{padding:10px 14px;border-top:1px solid var(--borde);display:flex;gap:8px}
+.cc-btn{flex:1;padding:9px;border-radius:var(--r2);font-size:12px;font-weight:700;transition:all .15s}
+.cc-btn-proc{background:rgba(224,138,60,.15);color:var(--naranja);border:1px solid rgba(224,138,60,.3)}
+.cc-btn-proc:hover{background:var(--naranja);color:#fff}
+.cc-btn-listo{background:rgba(76,175,125,.15);color:var(--verde);border:1px solid rgba(76,175,125,.3)}
+.cc-btn-listo:hover{background:var(--verde);color:#fff}
+/* Sin comandas */
+.kds-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--gray);gap:10px}
+.kds-empty-ico{font-size:60px;opacity:.3}
+/* Login overlay */
+#kds-login{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:100;flex-direction:column;gap:16px;padding:20px}
+.kds-login-card{background:var(--bg2);border:1px solid var(--borde);border-radius:16px;padding:30px;max-width:320px;width:100%;display:flex;flex-direction:column;gap:14px}
+.kds-login-tit{font-size:18px;font-weight:800;text-align:center}
+.kds-login-ico{font-size:40px;text-align:center}
+input{font-family:var(--font);background:var(--bg3);color:var(--white);border:1px solid var(--borde);border-radius:var(--r2);padding:10px 14px;width:100%;font-size:14px;outline:none}
+input:focus{border-color:var(--gold)}
+.kds-btn{padding:11px;border-radius:var(--r2);font-size:13px;font-weight:700;width:100%;transition:all .15s}
+.kds-btn-dorado{background:var(--gold);color:#000}
+.kds-btn-dorado:hover{opacity:.9}
+.kds-err{font-size:12px;color:var(--rojo);text-align:center;display:none;padding:6px;background:rgba(224,82,82,.08);border-radius:var(--r2)}
+/* Notif sonora */
+.notif-btn{padding:6px 12px;border-radius:10px;background:transparent;border:1px solid var(--borde);color:var(--gray);font-size:11px}
+.notif-btn.activo{border-color:var(--verde);color:var(--verde)}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:2px}
+</style>
+</head>
+<body>
+
+<div id="kds-login">
+  <div class="kds-login-card">
+    <div class="kds-login-ico">&#128293;</div>
+    <div class="kds-login-tit">Pantalla Cocina</div>
+    <input type="email" id="kds-email" placeholder="Correo">
+    <input type="password" id="kds-pass" placeholder="Contrase&#241;a">
+    <div class="kds-err" id="kds-err"></div>
+    <button class="kds-btn kds-btn-dorado" onclick="loginKDS()">Entrar</button>
+  </div>
+</div>
+
+<div class="body-wrap" id="kds-app" style="display:none">
+  <div class="kds-header">
+    <div class="kds-logo">&#128293; Cocina</div>
+    <div class="kds-titulo" id="kds-suc-titulo">Cargando...</div>
+    <div class="kds-contador" id="kds-pendientes-cnt">0 pendientes</div>
+    <button class="notif-btn" id="btn-notif" onclick="toggleNotif()">&#128276; Sonido</button>
+    <div class="kds-reloj" id="kds-reloj">00:00</div>
+  </div>
+  <div class="kds-grid" id="kds-grid">
+    <div class="kds-empty">
+      <div class="kds-empty-ico">&#128293;</div>
+      <div>Esperando comandas...</div>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script>
+/* KDS Cocina — cero backticks */
+var FB_CFG = {
+  apiKey: 'AIzaSyDXxnBB0Q4bnBSTJMBzLymbA3q9xtMne0o',
+  authDomain: 'admon-santiantz.firebaseapp.com',
+  projectId: 'admon-santiantz',
+  storageBucket: 'admon-santiantz.firebasestorage.app'
+};
+firebase.initializeApp(FB_CFG);
+var db = firebase.firestore();
+var auth = firebase.auth();
+
+// Conectar emuladores en desarrollo local
+if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+  try {
+    db.useEmulator('localhost', 8080);
+    auth.useEmulator('http://localhost:9099');
+  } catch(e) {}
+}
+
+var KDS = {
+  negocioId: null,
+  sucursalId: null,
+  comandas: [],
+  unsubComandas: null,
+  sonidoActivo: true,
+  audioCtx: null
+};
+
+// ── Helper anti-XSS ──
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) {
+    return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+  });
+}
+
+// Reloj
+setInterval(function() {
+  var ahora = new Date();
+  var h = String(ahora.getHours()).padStart(2,'0');
+  var m = String(ahora.getMinutes()).padStart(2,'0');
+  var el = document.getElementById('kds-reloj');
+  if (el) el.textContent = h + ':' + m;
+}, 1000);
+
+// Actualizar timers cada 10s
+setInterval(actualizarTimers, 10000);
+
+auth.onAuthStateChanged(function(user) {
+  if (!user) return;
+  document.getElementById('kds-login').style.display = 'none';
+  document.getElementById('kds-app').style.display = 'flex';
+  cargarSucursalKDS(user.uid);
+});
+
+function loginKDS() {
+  var em = document.getElementById('kds-email').value.trim();
+  var pw = document.getElementById('kds-pass').value;
+  var er = document.getElementById('kds-err');
+  er.style.display = 'none';
+  auth.signInWithEmailAndPassword(em, pw).catch(function() {
+    er.textContent = 'Credenciales incorrectas';
+    er.style.display = 'block';
+  });
+}
+
+function cargarSucursalKDS(uid) {
+  // Usar sesión guardada del POS
+  var suc = sessionStorage.getItem('pos_sucursal');
+  var SMAP = {
+    BARBAROCLUBHOUSE: { negocio: 'BARBAROCLUBHOUSE', nombre: 'BARBARO CLUBHOUSE' },
+    MANOUK:           { negocio: 'THE_TURF_SOCIAL_CLUB', nombre: 'MANOUK' },
+    TONI2:            { negocio: 'THE_TURF_SOCIAL_CLUB', nombre: 'TONI2' },
+    THE_BOURBON_ROOM: { negocio: 'THE_TURF_SOCIAL_CLUB', nombre: 'THE BOURBON ROOM' },
+    STUDIO_54:        { negocio: 'THE_TURF_SOCIAL_CLUB', nombre: 'STUDIO 54' }
+  };
+  if (suc && SMAP[suc]) {
+    KDS.sucursalId = suc;
+    KDS.negocioId  = SMAP[suc].negocio;
+    document.getElementById('kds-suc-titulo').innerHTML = '&#128293; ' + esc(SMAP[suc].nombre);
+    suscribirComandasCocina();
+  } else {
+    // Fallback: mostrar todas
+    KDS.negocioId  = 'BARBAROCLUBHOUSE';
+    KDS.sucursalId = 'BARBAROCLUBHOUSE';
+    suscribirComandasCocina();
+  }
+}
+
+function suscribirComandasCocina() {
+  if (KDS.unsubComandas) KDS.unsubComandas();
+  var query = db.collection('comandas')
+    .where('negocioId', '==', KDS.negocioId)
+    .where('destino', '==', 'cocina')
+    .where('status', 'in', ['pendiente', 'en_proceso'])
+    .orderBy('creadoEn', 'asc');
+
+  KDS.unsubComandas = query.onSnapshot(function(snap) {
+    var eranComandasPrev = KDS.comandas.length;
+    KDS.comandas = [];
+    snap.forEach(function(d) {
+      var c = d.data(); c.id = d.id;
+      if (!KDS.sucursalId || c.sucursalId === KDS.sucursalId) KDS.comandas.push(c);
+    });
+    var cnt = document.getElementById('kds-pendientes-cnt');
+    if (cnt) cnt.textContent = KDS.comandas.length + ' pendiente' + (KDS.comandas.length !== 1 ? 's' : '');
+    renderComandasCocina();
+    if (KDS.comandas.length > eranComandasPrev) tocarSonidoCocina();
+  });
+}
+
+function renderComandasCocina() {
+  var grid = document.getElementById('kds-grid');
+  if (!KDS.comandas.length) {
+    grid.innerHTML = '<div class="kds-empty"><div class="kds-empty-ico">&#128293;</div><div>Sin comandas pendientes</div><div style="font-size:12px;color:var(--gray);margin-top:4px">La cocina est\u00e1 al d\u00eda</div></div>';
+    return;
+  }
+  grid.innerHTML = '';
+  KDS.comandas.forEach(function(com) {
+    var card = crearCardComanda(com);
+    grid.appendChild(card);
+  });
+}
+
+function crearCardComanda(com) {
+  var ahora    = Date.now();
+  var creado   = com.creadoEn ? (com.creadoEn.toDate ? com.creadoEn.toDate().getTime() : ahora) : ahora;
+  var minutos  = Math.floor((ahora - creado) / 60000);
+  var urgente  = minutos >= 15;
+  var advertencia = minutos >= 8 && !urgente;
+
+  var card = document.createElement('div');
+  card.className = 'comanda-card' + (urgente ? ' urgente' : (com.status === 'en_proceso' ? ' en_proceso' : ''));
+  card.id = 'com-' + com.id;
+
+  var timerClass = urgente ? 'urgente' : (advertencia ? 'advertencia' : 'normal');
+  var timerTxt   = minutos + ':' + String(Math.floor(((ahora - creado) % 60000) / 1000)).padStart(2, '0') + ' min';
+
+  var itemsHTML = '';
+  (com.items || []).forEach(function(it) {
+    itemsHTML += '<div class="cc-item">' +
+      '<div class="cc-cant">' + (it.cantidad || 1) + '</div>' +
+      '<div class="cc-info">' +
+      '<div class="cc-nombre">' + esc(it.nombre || '') + '</div>' +
+      (it.modsTexto ? '<div class="cc-mods">' + esc(it.modsTexto) + '</div>' : '') +
+      '</div></div>';
+  });
+
+  var statusLabel = com.status === 'en_proceso' ? '<span style="font-size:10px;color:var(--naranja);font-weight:700;letter-spacing:1px">EN PROCESO</span>' : '';
+
+  card.innerHTML =
+    '<div class="cc-header">' +
+    '<div class="cc-mesa">' + esc(com.mesaNombre || 'Mesa') + '</div>' +
+    statusLabel +
+    '<div class="cc-mesero">' + esc(com.mesero || '') + '</div>' +
+    '<div class="cc-timer ' + timerClass + '">' + timerTxt + '</div>' +
+    '</div>' +
+    '<div class="cc-items">' + itemsHTML + '</div>' +
+    '<div class="cc-footer">' +
+    (com.status === 'pendiente' ? '<button class="cc-btn cc-btn-proc" onclick="marcarEnProceso(\'' + esc(com.id) + '\')">En proceso</button>' : '') +
+    '<button class="cc-btn cc-btn-listo" onclick="marcarListo(\'' + esc(com.id) + '\')">&#10003; Listo</button>' +
+    '</div>';
+  return card;
+}
+
+function actualizarTimers() {
+  KDS.comandas.forEach(function(com) {
+    var card = document.getElementById('com-' + com.id);
+    if (!card) return;
+    var timerEl = card.querySelector('.cc-timer');
+    if (!timerEl) return;
+    var ahora   = Date.now();
+    var creado  = com.creadoEn ? (com.creadoEn.toDate ? com.creadoEn.toDate().getTime() : ahora) : ahora;
+    var minutos = Math.floor((ahora - creado) / 60000);
+    var seg     = Math.floor(((ahora - creado) % 60000) / 1000);
+    timerEl.textContent = minutos + ':' + String(seg).padStart(2, '0') + ' min';
+    timerEl.className   = 'cc-timer ' + (minutos >= 15 ? 'urgente' : minutos >= 8 ? 'advertencia' : 'normal');
+    if (minutos >= 15) { card.classList.add('urgente'); }
+  });
+}
+
+function marcarEnProceso(id) {
+  db.collection('comandas').doc(id).update({ status: 'en_proceso', enProcesoEn: firebase.firestore.FieldValue.serverTimestamp() });
+}
+
+function marcarListo(id) {
+  db.collection('comandas').doc(id).update({ status: 'listo', listoEn: firebase.firestore.FieldValue.serverTimestamp() });
+}
+
+function toggleNotif() {
+  KDS.sonidoActivo = !KDS.sonidoActivo;
+  var btn = document.getElementById('btn-notif');
+  btn.classList.toggle('activo', KDS.sonidoActivo);
+  btn.innerHTML = KDS.sonidoActivo ? '&#128276; Sonido' : '&#128277; Silencio';
+}
+
+function tocarSonidoCocina() {
+  if (!KDS.sonidoActivo) return;
+  try {
+    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [440, 554, 659].forEach(function(freq, i) {
+      var osc  = ctx.createOscillator();
+      var gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0, ctx.currentTime + i * 0.15);
+      gain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + i * 0.15 + 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.15 + 0.25);
+      osc.start(ctx.currentTime + i * 0.15);
+      osc.stop(ctx.currentTime + i * 0.15 + 0.25);
+    });
+  } catch(e) {}
+}
+</script>
+</body>
+</html>

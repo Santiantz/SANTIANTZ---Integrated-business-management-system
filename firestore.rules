@@ -1,0 +1,239 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /* ═══ HELPERS ═══ */
+    function isAuth()      { return request.auth != null; }
+    function userExists()  { return exists(/databases/$(database)/documents/users/$(request.auth.uid)); }
+    function userDoc()     { return get(/databases/$(database)/documents/users/$(request.auth.uid)).data; }
+    function userRol()     { return userExists() ? userDoc().rol : ''; }
+    function userNeg()     { return userExists() ? userDoc().negocioId : ''; }
+    function userSuc()     { return userExists() ? userDoc().sucursalId : ''; }
+
+    function isProp()      { return userRol() == 'propietario'; }
+    function isAdminNeg()  { return userRol() == 'admin_negocio'; }
+    function isDirector()  { return userRol() == 'director'; }
+    function isChef()      { return userRol() == 'chef'; }
+    function isJefeBar()   { return userRol() == 'jefe_barras'; }
+    function isCompras()   { return userRol() == 'compras'; }
+    function isAuxAdmin()  { return userRol() == 'auxiliar_admin'; }
+    function isCajero()    { return userRol() == 'cajero'; }
+    function isMesero()    { return userRol() == 'mesero'; }
+    function isBartender() { return userRol() == 'bartender'; }
+    function isAuditor()   { return userRol() == 'auditor'; }
+
+    function negOk(d) {
+      return isProp() || (d.negocioId == userNeg());
+    }
+    function operaNeg() {
+      return isProp() || isAdminNeg() || isDirector() || isChef() || isJefeBar()
+        || isCompras() || isAuxAdmin() || isCajero() || isMesero() || isBartender() || isAuditor();
+    }
+    function escribeOp() {
+      return isProp() || isAdminNeg() || isCajero() || isMesero() || isBartender();
+    }
+    function adminOk() {
+      return isProp() || isAdminNeg();
+    }
+
+    /* IMPORTANTE: Firestore evalúa reglas de forma "permissive OR".
+       Si una regla más específica permite, el match general no la restringe.
+       Pero si hay UN SOLO match {document=**} con allow, ese gana sobre los específicos.
+       La solución: poner los matches específicos primero y el wildcard al final
+       SOLO con allow para colecciones realmente desconocidas, NO con el mismo path.
+       En la práctica, Firestore aplica el match más profundo PRIMERO y si no
+       hay regla específica, cae al wildcard. PERO el comportamiento real es
+       que las reglas se UNEN con OR entre todos los match que coincidan.
+       Por eso eliminamos el wildcard global y listamos todas las colecciones. */
+
+    /* ═══ USUARIOS ═══ */
+    match /users/{uid} {
+      allow read:  if isAuth() && (request.auth.uid == uid || isProp() ||
+                                   (isAdminNeg() && resource.data.negocioId == userNeg()));
+      allow create, update, delete: if isAuth() && isProp();
+    }
+
+    /* ═══ NEGOCIOS ═══ */
+    match /negocios/{negId} {
+      allow read:  if isAuth();
+      allow write: if isAuth() && isProp();
+    }
+
+    /* ═══ COSTCONTROL: Colecciones existentes ═══ */
+    match /facturas/{docId} {
+      allow read:   if isAuth() && operaNeg() && negOk(resource.data);
+      allow create: if isAuth() && (isProp() || isAdminNeg() || isCompras()) && negOk(request.resource.data);
+      allow update: if isAuth() && (isProp() || isAdminNeg() || isCompras()) && negOk(resource.data);
+      allow delete: if isAuth() && isProp();
+    }
+    match /facturas_emitidas/{docId} {
+      allow read:   if isAuth() && operaNeg() && negOk(resource.data);
+      allow create: if isAuth() && (isProp() || isAdminNeg() || isAuxAdmin()) && negOk(request.resource.data);
+      allow update: if isAuth() && (isProp() || isAdminNeg() || isAuxAdmin()) && negOk(resource.data);
+      allow delete: if isAuth() && isProp();
+    }
+    match /ventas/{docId} {
+      allow read:   if isAuth() && operaNeg() && negOk(resource.data);
+      allow create: if isAuth() && escribeOp() && negOk(request.resource.data);
+      allow update: if isAuth() && adminOk() && negOk(resource.data);
+      allow delete: if isAuth() && isProp();
+    }
+    match /inventarios/{docId} {
+      allow read:   if isAuth() && operaNeg() && negOk(resource.data);
+      allow write:  if isAuth() && (isProp() || isAdminNeg() || isChef() || isJefeBar()) && negOk(request.resource.data);
+    }
+    match /cierres_caja/{docId} {
+      allow read:   if isAuth() && operaNeg() && negOk(resource.data);
+      allow create: if isAuth() && (isProp() || isAdminNeg() || isCajero()) && negOk(request.resource.data);
+      allow update: if isAuth() && adminOk();
+      allow delete: if isAuth() && isProp();
+    }
+    match /requisiciones/{docId} {
+      allow read:   if isAuth() && operaNeg() && negOk(resource.data);
+      allow write:  if isAuth() && (isProp() || isAdminNeg() || isCompras()) && negOk(request.resource.data);
+    }
+    match /requisiciones_efectivo/{docId} {
+      allow read:   if isAuth() && operaNeg() && negOk(resource.data);
+      allow write:  if isAuth() && (isProp() || isAdminNeg() || isCompras() || isCajero()) && negOk(request.resource.data);
+    }
+    match /ef_transferencias/{docId} {
+      allow read:   if isAuth() && operaNeg() && negOk(resource.data);
+      allow write:  if isAuth() && adminOk();
+    }
+    match /ef_fondos/{docId} {
+      allow read:   if isAuth() && operaNeg() && negOk(resource.data);
+      allow write:  if isAuth() && adminOk();
+    }
+    match /ef_pagos/{docId} {
+      allow read:   if isAuth() && operaNeg() && negOk(resource.data);
+      allow write:  if isAuth() && (isProp() || isAdminNeg() || isCajero() || isCompras()) && negOk(request.resource.data);
+    }
+    match /tesoreria_movimientos/{docId} {
+      allow read:  if isAuth() && (adminOk() || isDirector()) && negOk(resource.data);
+      allow write: if isAuth() && adminOk();
+    }
+    match /tesoreria_saldos/{docId} {
+      allow read:  if isAuth() && (adminOk() || isDirector());
+      allow write: if isAuth() && adminOk();
+    }
+    match /tesoreria_aguinaldos/{docId} {
+      allow read:  if isAuth() && (adminOk() || isDirector());
+      allow write: if isAuth() && adminOk();
+    }
+    match /tesoreria_utilidades/{docId} {
+      allow read:  if isAuth() && (adminOk() || isDirector());
+      allow write: if isAuth() && adminOk();
+    }
+    match /empleados/{docId} {
+      allow read:  if isAuth() && operaNeg() && negOk(resource.data);
+      allow write: if isAuth() && adminOk() && negOk(request.resource.data);
+    }
+    match /nominas_pagos/{docId} {
+      allow read:  if isAuth() && (adminOk() || isDirector()) && negOk(resource.data);
+      allow write: if isAuth() && adminOk();
+    }
+    match /reportes/{docId} {
+      allow read:  if isAuth() && operaNeg() && negOk(resource.data);
+      allow write: if isAuth() && adminOk();
+    }
+    match /auditoria_reportes/{docId} {
+      allow read:  if isAuth() && (adminOk() || isAuditor() || isDirector()) && negOk(resource.data);
+      allow write: if isAuth() && (adminOk() || isAuditor());
+    }
+    match /estados_cuenta_pdf/{docId} {
+      allow read:  if isAuth() && (adminOk() || isDirector()) && negOk(resource.data);
+      allow write: if isAuth() && adminOk();
+    }
+    match /alertas_sistema/{docId} {
+      allow read:  if isAuth() && operaNeg();
+      allow write: if isAuth() && adminOk();
+    }
+    match /alertas_cobro/{docId} {
+      allow read:  if isAuth() && operaNeg() && negOk(resource.data);
+      allow write: if isAuth() && (isProp() || isAdminNeg() || isCajero() || isCompras());
+    }
+    match /cobros_historial/{docId} {
+      allow read:  if isAuth() && operaNeg() && negOk(resource.data);
+      allow write: if isAuth() && (isProp() || isAdminNeg() || isCajero());
+    }
+    match /proveedores_efectivo/{docId} {
+      allow read:  if isAuth() && operaNeg() && negOk(resource.data);
+      allow write: if isAuth() && (isProp() || isAdminNeg() || isCompras() || isCajero());
+    }
+
+    /* ═══ POS: Colecciones nuevas ═══ */
+    match /productos_pos/{docId} {
+      allow read:   if isAuth() && operaNeg() && negOk(resource.data);
+      allow create: if isAuth() && adminOk() && negOk(request.resource.data);
+      allow update: if isAuth() && (adminOk() || ((isMesero() || isCajero() || isBartender()) && negOk(resource.data)));
+      allow delete: if isAuth() && adminOk();
+    }
+    match /categorias_pos/{docId} {
+      allow read:   if isAuth() && operaNeg() && negOk(resource.data);
+      allow write:  if isAuth() && adminOk() && negOk(request.resource.data);
+    }
+    match /pos_mesas/{docId} {
+      allow read:   if isAuth() && operaNeg() && negOk(resource.data);
+      allow create: if isAuth() && (adminOk() || isMesero() || isCajero()) && negOk(request.resource.data);
+      allow update: if isAuth() && (adminOk() || isMesero() || isCajero() || isBartender()) && negOk(resource.data);
+      allow delete: if isAuth() && adminOk();
+    }
+    match /pos_ordenes/{docId} {
+      allow read:   if isAuth() && operaNeg() && negOk(resource.data);
+      allow create: if isAuth() && (adminOk() || isMesero() || isCajero() || isBartender()) && negOk(request.resource.data);
+      allow update: if isAuth() && (adminOk() || isMesero() || isCajero() || isBartender()) && negOk(resource.data);
+      allow delete: if isAuth() && adminOk();
+    }
+    match /comandas/{docId} {
+      allow read:   if isAuth() && operaNeg() && negOk(resource.data);
+      allow create: if isAuth() && (adminOk() || isMesero() || isCajero()) && negOk(request.resource.data);
+      allow update: if isAuth() && (adminOk() || isMesero() || isCajero() || isChef() || isJefeBar() || isBartender()) && negOk(resource.data);
+      allow delete: if isAuth() && adminOk();
+    }
+    match /pos_cobros/{docId} {
+      allow read:   if isAuth() && operaNeg() && negOk(resource.data);
+      allow create: if isAuth() && (adminOk() || isCajero() || isMesero()) && negOk(request.resource.data);
+      allow update, delete: if isAuth() && adminOk();
+    }
+    match /cortesias/{docId} {
+      allow read:   if isAuth() && operaNeg() && negOk(resource.data);
+      allow create: if isAuth() && (adminOk() || isCajero() || isMesero()) && negOk(request.resource.data);
+      allow update, delete: if isAuth() && adminOk();
+    }
+    match /pos_turnos/{docId} {
+      allow read:   if isAuth() && operaNeg() && negOk(resource.data);
+      allow create: if isAuth() && (adminOk() || isCajero()) && negOk(request.resource.data);
+      allow update: if isAuth() && (adminOk() || (isCajero() && resource.data.cajeroId == request.auth.uid));
+      allow delete: if isAuth() && adminOk();
+    }
+    match /pos_config/{docId} {
+      allow read:   if isAuth();
+      allow create, update: if isAuth() && (isProp() || docId.matches('^init_.*'));
+      allow delete: if isAuth() && isProp();
+    }
+  
+    // === EVENTOS - Boletera Santiantz Events ===
+    match /eventos/{eventoId} {
+      allow read: if true;
+      allow create, update, delete: if request.auth != null;
+    }
+
+    match /personas_verificadas/{personaId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    match /boletos/{boletoId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null;
+      allow delete: if request.auth != null;
+    }
+
+    match /validaciones_puerta/{vId} {
+      allow read, create: if request.auth != null;
+      allow update, delete: if false;
+    }
+
+}
+}

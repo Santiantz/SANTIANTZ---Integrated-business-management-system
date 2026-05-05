@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Santiantz Events</title>
+<style>
+  /* RESET */
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #0a0a0a;
+    color: #ffffff;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* HEADER */
+  .topbar {
+    background: #0a0a0a;
+    padding: 20px;
+    text-align: center;
+    border-bottom: 2px solid #d4af37;
+  }
+  .brand { color: #d4af37; font-size: 22px; font-weight: bold; letter-spacing: 2px; }
+  .brand-sub { color: #888; font-size: 11px; margin-top: 4px; }
+
+  /* CONTAINERS */
+  .wrap { max-width: 600px; margin: 0 auto; padding: 20px 16px 60px; }
+  .card {
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .card-titulo { color: #d4af37; font-size: 15px; font-weight: bold; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px; }
+
+  /* EVENTO HERO */
+  .banner {
+    width: 100%;
+    aspect-ratio: 16/9;
+    background: #222 center/cover no-repeat;
+    border-radius: 12px;
+    margin-bottom: 20px;
+  }
+  .evento-nombre { font-size: 26px; font-weight: bold; color: #fff; margin-bottom: 8px; }
+  .evento-fecha { color: #d4af37; font-size: 14px; margin-bottom: 4px; }
+  .evento-desc { color: #aaa; font-size: 14px; line-height: 1.5; margin-top: 12px; }
+
+  /* TIPOS DE ENTRADA */
+  .tipo-entrada {
+    background: #0a0a0a;
+    border: 2px solid #333;
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .tipo-entrada.seleccionado { border-color: #d4af37; background: #221c0a; }
+  .tipo-entrada-nombre { font-size: 16px; font-weight: bold; }
+  .tipo-entrada-precio { color: #d4af37; font-size: 18px; font-weight: bold; margin-top: 4px; }
+  .tipo-entrada-info { color: #888; font-size: 12px; margin-top: 4px; }
+  .agotado { opacity: 0.4; cursor: not-allowed; }
+
+  /* CONTROLES */
+  label { display: block; color: #aaa; font-size: 12px; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+  input, select, textarea {
+    width: 100%;
+    background: #0a0a0a;
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 12px 14px;
+    color: #fff;
+    font-size: 15px;
+    margin-bottom: 14px;
+    -webkit-appearance: none;
+  }
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: #d4af37;
+  }
+
+  .cantidad-row { display: flex; align-items: center; gap: 12px; }
+  .cantidad-btn {
+    width: 44px; height: 44px;
+    background: #d4af37; color: #000;
+    border: none; border-radius: 8px;
+    font-size: 22px; font-weight: bold;
+    cursor: pointer;
+  }
+  .cantidad-num { font-size: 20px; font-weight: bold; min-width: 40px; text-align: center; }
+
+  /* BOTONES */
+  .btn {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .btn-primary { background: #d4af37; color: #000; }
+  .btn-secondary { background: transparent; border: 1px solid #555; color: #fff; }
+  .btn-danger { background: #ff4444; color: #fff; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* CAMARA / CAPTURA */
+  .captura-wrap { position: relative; aspect-ratio: 4/3; background: #000; border-radius: 12px; overflow: hidden; margin-bottom: 12px; }
+  .captura-wrap video, .captura-wrap canvas { width: 100%; height: 100%; object-fit: cover; }
+  .captura-wrap img { width: 100%; height: 100%; object-fit: cover; }
+  .captura-overlay {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    color: rgba(255,255,255,0.5);
+    font-size: 14px;
+    pointer-events: none;
+  }
+
+  /* PROGRESO */
+  .progreso { display: flex; gap: 6px; margin-bottom: 24px; }
+  .progreso-paso {
+    flex: 1; height: 4px;
+    background: #333; border-radius: 2px;
+  }
+  .progreso-paso.activo { background: #d4af37; }
+
+  /* MENSAJES */
+  .alerta {
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    margin-bottom: 16px;
+    border-left: 3px solid;
+  }
+  .alerta-error { background: #2a0a0a; border-color: #ff4444; color: #ff8888; }
+  .alerta-info { background: #0a1a2a; border-color: #4488ff; color: #88bbff; }
+  .alerta-exito { background: #0a2a0a; border-color: #00c851; color: #88dd88; }
+  .alerta-warn { background: #2a200a; border-color: #ffbb33; color: #ffd577; }
+
+  /* LOADING */
+  .loading {
+    display: flex; align-items: center; justify-content: center;
+    padding: 30px; color: #d4af37;
+  }
+  .spinner {
+    width: 40px; height: 40px;
+    border: 3px solid #333; border-top-color: #d4af37;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-right: 12px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* QR EXITO */
+  .qr-final {
+    background: #fff; padding: 20px; border-radius: 12px;
+    width: 280px; margin: 20px auto;
+  }
+  .qr-final img { width: 100%; }
+
+  /* TABS */
+  .tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+  .tab {
+    flex: 1; padding: 12px;
+    background: #1a1a1a; border: 1px solid #333;
+    border-radius: 8px; text-align: center;
+    cursor: pointer; font-size: 14px;
+  }
+  .tab.activo { border-color: #d4af37; color: #d4af37; }
+
+  .hide { display: none !important; }
+  small.hint { color: #888; font-size: 11px; display: block; margin-top: -10px; margin-bottom: 14px; }
+</style>
+</head>
+<body>
+<!-- Panel debug temporal -->
+<div id="debug-panel" style="position:fixed;top:0;left:0;right:0;background:#000;color:#0f0;font-family:monospace;font-size:11px;padding:6px;z-index:99999;max-height:30vh;overflow-y:auto;border-bottom:2px solid #0f0;">
+  <div id="debug-log">DEBUG: cargando...</div>
+</div>
+<script>
+window.__debugLog = function(msg) {
+  var el = document.getElementById('debug-log');
+  if (!el) return;
+  var time = new Date().toLocaleTimeString();
+  el.innerHTML = '[' + time + '] ' + msg + '<br>' + el.innerHTML;
+};
+window.addEventListener('error', function(e) {
+  if (window.__debugLog) window.__debugLog('JS ERROR: ' + e.message + ' @ ' + e.filename + ':' + e.lineno);
+});
+window.addEventListener('unhandledrejection', function(e) {
+  if (window.__debugLog) window.__debugLog('PROMISE REJECT: ' + (e.reason && e.reason.message ? e.reason.message : JSON.stringify(e.reason)));
+});
+</script>
+
+
+<div class="topbar">
+  <div class="brand">SANTIANTZ EVENTS</div>
+  <div class="brand-sub">Tu boleto verificado</div>
+</div>
+
+<div class="wrap" id="app">
+  <!-- Pantallas se renderizan dinamicamente -->
+  <div class="loading">
+    <div class="spinner"></div>
+    Cargando evento...
+  </div>
+</div>
+
+<!-- Firebase v10.12.0 modular -->
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getFirestore, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getStorage, ref as storageRef, uploadString, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
+import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-functions.js';
+import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+
+const firebaseConfig = {
+  apiKey: 'AIzaSyDXxnBB0Q4bnBSTJMBzLymbA3q9xtMne0o',
+  authDomain: 'admon-santiantz.firebaseapp.com',
+  projectId: 'admon-santiantz',
+  storageBucket: 'admon-santiantz.firebasestorage.app'
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const storage = getStorage(app);
+const functions = getFunctions(app, 'us-east1');
+const auth = getAuth(app);
+
+// ============================================================
+// LOGIN ANONIMO AUTOMATICO
+// El cliente se autentica de forma transparente al cargar la pagina
+// para poder llamar Cloud Functions protegidas (verificarRostro, etc).
+// ============================================================
+let authReady = false;
+const authPromise = new Promise((resolve) => {
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      authReady = true;
+      console.log('Auth anonimo listo, uid:', user.uid);
+      if (window.__debugLog) window.__debugLog('AUTH OK uid=' + user.uid.substring(0,8));
+      resolve(user);
+    } else {
+      if (window.__debugLog) window.__debugLog('onAuthStateChanged: user=null');
+    }
+  });
+});
+if (window.__debugLog) window.__debugLog('Llamando signInAnonymously...');
+signInAnonymously(auth).then(function() {
+  if (window.__debugLog) window.__debugLog('signInAnonymously promise OK');
+}).catch(function(err) {
+  console.error('Error en signInAnonymously:', err);
+  if (window.__debugLog) window.__debugLog('SIGNIN ERROR: ' + err.code + ' - ' + err.message);
+});
+
+// Callables
+const verificarRostro = httpsCallable(functions, 'verificarRostro');
+const crearPreferencia = httpsCallable(functions, 'crearPreferencia');
+
+// ============================================================
+// ESTADO GLOBAL
+// ============================================================
+const state = {
+  eventoId: null,
+  evento: null,
+  paso: 'cargando',
+  tipoEntradaId: null,
+  cantidad: 1,
+  esMexicano: true,
+  fotoINEFrenteBase64: null,
+  fotoINEFrenteURL: null,
+  qrINEData: null, // datos extraidos del QR del INE
+  fotoSelfieBase64: null,
+  fotoSelfieURL: null,
+  awsScore: null,
+  pasaporteData: null,
+  email: '',
+  telefono: ''
+};
+
+// ============================================================
+// INICIO - Carga del evento desde URL
+// ============================================================
+const params = new URLSearchParams(window.location.search);
+const eventoId = params.get('evento');
+const estadoPago = params.get('estado'); // success | failure | pending desde MP
+
+if (estadoPago) {
+  // Volvio de MercadoPago
+  renderEstadoPago(estadoPago);
+} else if (!eventoId) {
+  renderError('No se especifico un evento. Revisa el link.');
+} else {
+  state.eventoId = eventoId;
+  cargarEvento();
+}
+
+async function cargarEvento() {
+  try {
+    const snap = await getDoc(doc(db, 'eventos', eventoId));
+    if (!snap.exists()) {
+      renderError('Este evento no existe.');
+      return;
+    }
+    state.evento = { id: snap.id, ...snap.data() };
+
+    if (state.evento.status !== 'activo') {
+      renderError('Este evento no esta disponible en este momento.');
+      return;
+    }
+
+    state.paso = 'tipos';
+    render();
+  } catch (e) {
+    console.error(e);
+    renderError('Error al cargar el evento: ' + e.message);
+  }
+}
+
+// ============================================================
+// RENDER PRINCIPAL
+// ============================================================
+function render() {
+  const root = document.getElementById('app');
+  root.innerHTML = '';
+
+  switch (state.paso) {
+    case 'tipos': renderTiposEntrada(root); break;
+    case 'identidad': renderIdentidad(root); break;
+    case 'ine-frente': renderCapturaINEFrente(root); break;
+    case 'ine-qr': renderEscaneoINEQR(root); break;
+    case 'pasaporte': renderPasaporte(root); break;
+    case 'selfie': renderCapturaSelfie(root); break;
+    case 'verificando': renderVerificando(root); break;
+    case 'datos-contacto': renderDatosContacto(root); break;
+    case 'pago': renderPago(root); break;
+    default: renderError('Paso desconocido: ' + state.paso);
+  }
+}
+
+function renderProgreso(actual, total = 6) {
+  let html = '<div class="progreso">';
+  for (let i = 1; i <= total; i++) {
+    html += `<div class="progreso-paso ${i <= actual ? 'activo' : ''}"></div>`;
+  }
+  html += '</div>';
+  return html;
+}
+
+// ============================================================
+// PASO 1: Tipos de entrada
+// ============================================================
+function renderTiposEntrada(root) {
+  const ev = state.evento;
+  const banner = ev.bannerURL
+    ? `<div class="banner" style="background-image:url('${ev.bannerURL}')"></div>`
+    : '<div class="banner"></div>';
+
+  const fechaTexto = formatearFecha(ev.fecha);
+
+  const tipos = (ev.tiposEntrada || []).map(t => {
+    const disponibles = (t.capacidad || 0) - (t.vendidos || 0);
+    const agotado = disponibles <= 0;
+    const sel = state.tipoEntradaId === t.id ? 'seleccionado' : '';
+    return `
+      <div class="tipo-entrada ${sel} ${agotado ? 'agotado' : ''}"
+           data-id="${t.id}" ${agotado ? 'data-agotado="1"' : ''}>
+        <div class="tipo-entrada-nombre">${escapar(t.nombre)}</div>
+        <div class="tipo-entrada-precio">$${Number(t.precio).toLocaleString('es-MX')} MXN</div>
+        <div class="tipo-entrada-info">${agotado ? 'AGOTADO' : 'Disponibles: ' + disponibles}</div>
+      </div>
+    `;
+  }).join('');
+
+  root.innerHTML = `
+    ${banner}
+    <div class="evento-nombre">${escapar(ev.nombre)}</div>
+    <div class="evento-fecha">${fechaTexto}${ev.horaApertura ? ' · Apertura ' + escapar(ev.horaApertura) : ''}</div>
+    ${ev.edadMinima ? '<div class="alerta alerta-warn">Edad minima: ' + ev.edadMinima + ' anios</div>' : ''}
+    ${ev.descripcion ? `<div class="evento-desc">${escapar(ev.descripcion)}</div>` : ''}
+
+    <div class="card" style="margin-top:24px;">
+      <div class="card-titulo">Selecciona tu boleto</div>
+      ${tipos}
+      <div style="margin-top:16px;">
+        <label>Cantidad</label>
+        <div class="cantidad-row">
+          <button class="cantidad-btn" id="btn-menos">−</button>
+          <div class="cantidad-num" id="cant-num">${state.cantidad}</div>
+          <button class="cantidad-btn" id="btn-mas">+</button>
+        </div>
+      </div>
+      <button class="btn btn-primary" id="btn-continuar" style="margin-top:20px;" ${state.tipoEntradaId ? '' : 'disabled'}>
+        Continuar
+      </button>
+    </div>
+  `;
+
+  // Click en tipo de entrada
+  root.querySelectorAll('.tipo-entrada').forEach(el => {
+    el.addEventListener('click', () => {
+      if (el.dataset.agotado) return;
+      state.tipoEntradaId = el.dataset.id;
+      render();
+    });
+  });
+
+  document.getElementById('btn-menos').onclick = () => {
+    if (state.cantidad > 1) { state.cantidad--; render(); }
+  };
+  document.getElementById('btn-mas').onclick = () => {
+    if (state.cantidad < 10) { state.cantidad++; render(); }
+  };
+  document.getElementById('btn-continuar').onclick = () => {
+    if (!state.tipoEntradaId) return;
+    state.paso = 'identidad';
+    render();
+  };
+}
+
+// ============================================================
+// PASO 2: Identidad (Mexicano vs Extranjero)
+// ============================================================
+function renderIdentidad(root) {
+  root.innerHTML = `
+    ${renderProgreso(2)}
+    <div class="card">
+      <div class="card-titulo">Verificacion de identidad</div>
+      <p style="color:#aaa;margin-bottom:16px;font-size:14px;">
+        Para cumplir con los requisitos del evento necesitamos verificar tu identidad.
+      </p>
+      <div class="tabs">
+        <div class="tab ${state.esMexicano ? 'activo' : ''}" data-mx="1">Mexicano (INE)</div>
+        <div class="tab ${!state.esMexicano ? 'activo' : ''}" data-mx="0">Extranjero (Pasaporte)</div>
+      </div>
+      <button class="btn btn-primary" id="btn-continuar">Continuar</button>
+      <button class="btn btn-secondary" id="btn-atras" style="margin-top:10px;">Atras</button>
+    </div>
+  `;
+  root.querySelectorAll('.tab').forEach(t => {
+    t.addEventListener('click', () => {
+      state.esMexicano = t.dataset.mx === '1';
+      render();
+    });
+  });
+  document.getElementById('btn-continuar').onclick = () => {
+    state.paso = state.esMexicano ? 'ine-frente' : 'pasaporte';
+    render();
+  };
+  document.getElementById('btn-atras').onclick = () => { state.paso = 'tipos'; render(); };
+}
+
+// ============================================================
+// PASO 3a: Foto INE Frente
+// ============================================================
+function renderCapturaINEFrente(root) {
+  root.innerHTML = `
+    ${renderProgreso(3)}
+    <div class="card">
+      <div class="card-titulo">Captura tu INE - Frente</div>
+      <p style="color:#aaa;font-size:13px;margin-bottom:16px;">
+        Toma una foto clara del frente de tu credencial. Asegurate de que la foto y el texto se vean bien.
+      </p>
+
+      <div class="captura-wrap" id="cam-wrap">
+        <video id="cam" autoplay playsinline></video>
+        <div class="captura-overlay">Encuadra tu INE</div>
+      </div>
+
+      <button class="btn btn-primary" id="btn-capturar">Capturar foto</button>
+      <button class="btn btn-secondary" id="btn-atras" style="margin-top:10px;">Atras</button>
+      <input type="file" id="file-input" accept="image/*" style="display:none">
+      <button class="btn btn-secondary" id="btn-archivo" style="margin-top:10px;">Subir desde galeria</button>
+    </div>
+  `;
+
+  const video = document.getElementById('cam');
+  let stream;
+
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+    .then(s => { stream = s; video.srcObject = s; })
+    .catch(() => {
+      document.getElementById('cam-wrap').innerHTML = '<div class="alerta alerta-warn">No se pudo abrir la camara. Usa el boton de subir desde galeria.</div>';
+    });
+
+  document.getElementById('btn-capturar').onclick = () => {
+    if (!stream) return;
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+    state.fotoINEFrenteBase64 = canvas.toDataURL('image/jpeg', 0.85);
+    stream.getTracks().forEach(t => t.stop());
+    state.paso = 'ine-qr';
+    render();
+  };
+
+  document.getElementById('btn-archivo').onclick = () => document.getElementById('file-input').click();
+  document.getElementById('file-input').onchange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      state.fotoINEFrenteBase64 = reader.result;
+      if (stream) stream.getTracks().forEach(t => t.stop());
+      state.paso = 'ine-qr';
+      render();
+    };
+    reader.readAsDataURL(file);
+  };
+
+  document.getElementById('btn-atras').onclick = () => {
+    if (stream) stream.getTracks().forEach(t => t.stop());
+    state.paso = 'identidad';
+    render();
+  };
+}
+
+// ============================================================
+// PASO 3b: Escanear QR del INE Reverso
+// ============================================================
+function renderEscaneoINEQR(root) {
+  root.innerHTML = `
+    ${renderProgreso(4)}
+    <div class="card">
+      <div class="card-titulo">Escanea el QR de tu INE - Reverso</div>
+      <p style="color:#aaa;font-size:13px;margin-bottom:16px;">
+        Voltea tu credencial y muestra el codigo QR del reverso. Lo escaneamos automaticamente.
+      </p>
+
+      <div class="captura-wrap">
+        <video id="cam-qr" autoplay playsinline></video>
+        <div class="captura-overlay" id="qr-status">Buscando QR...</div>
+      </div>
+
+      <button class="btn btn-secondary" id="btn-saltar" style="margin-top:10px;">Saltar (capturar manualmente)</button>
+      <button class="btn btn-secondary" id="btn-atras" style="margin-top:10px;">Atras</button>
+    </div>
+  `;
+
+  const video = document.getElementById('cam-qr');
+  const statusEl = document.getElementById('qr-status');
+  let stream;
+  let escaneando = true;
+
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+    .then(s => { stream = s; video.srcObject = s; tickQR(); })
+    .catch(() => {
+      statusEl.textContent = 'Camara no disponible';
+    });
+
+  function tickQR() {
+    if (!escaneando) return;
+    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0);
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      // Usamos jsQR si esta disponible
+      if (window.jsQR) {
+        const code = window.jsQR(imageData.data, imageData.width, imageData.height);
+        if (code) {
+          state.qrINEData = parsearQRINE(code.data);
+          statusEl.textContent = 'QR detectado!';
+          escaneando = false;
+          if (stream) stream.getTracks().forEach(t => t.stop());
+          setTimeout(() => { state.paso = 'selfie'; render(); }, 600);
+          return;
+        }
+      }
+    }
+    requestAnimationFrame(tickQR);
+  }
+
+  document.getElementById('btn-saltar').onclick = () => {
+    escaneando = false;
+    if (stream) stream.getTracks().forEach(t => t.stop());
+    state.qrINEData = { manual: true };
+    state.paso = 'selfie';
+    render();
+  };
+
+  document.getElementById('btn-atras').onclick = () => {
+    escaneando = false;
+    if (stream) stream.getTracks().forEach(t => t.stop());
+    state.paso = 'ine-frente';
+    render();
+  };
+}
+
+/**
+ * Parsea el contenido del QR del INE.
+ * El INE codifica datos en formato variable, pero usualmente
+ * incluye CIC|CURP|... o un texto con campos separados.
+ * Esta funcion hace lo mejor posible y guarda el dato crudo.
+ */
+function parsearQRINE(texto) {
+  const data = { raw: texto };
+  // Busca CURP (18 caracteres alfanumericos)
+  const matchCurp = texto.match(/[A-Z]{4}\d{6}[HM][A-Z]{5}[A-Z0-9]\d/);
+  if (matchCurp) data.curp = matchCurp[0];
+  // Si tiene formato pipe-separated
+  if (texto.includes('|')) {
+    const partes = texto.split('|');
+    data.partes = partes;
+  }
+  return data;
+}
+
+// ============================================================
+// PASO 3 (extranjero): Pasaporte
+// ============================================================
+function renderPasaporte(root) {
+  root.innerHTML = `
+    ${renderProgreso(3)}
+    <div class="card">
+      <div class="card-titulo">Pasaporte</div>
+      <p style="color:#aaa;font-size:13px;margin-bottom:16px;">
+        Sube una foto clara de tu pasaporte y completa los datos.
+      </p>
+
+      <div class="captura-wrap" id="pas-wrap">
+        ${state.pasaporteData?.fotoBase64 ? `<img src="${state.pasaporteData.fotoBase64}">` : '<div class="captura-overlay">Sin foto</div>'}
+      </div>
+      <input type="file" id="file-pas" accept="image/*" style="display:none">
+      <button class="btn btn-secondary" id="btn-foto-pas">Subir foto pasaporte</button>
+
+      <div style="margin-top:16px;">
+        <label>Numero de pasaporte</label>
+        <input type="text" id="pas-numero" value="${state.pasaporteData?.numero || ''}">
+        <label>Pais emisor</label>
+        <input type="text" id="pas-pais" value="${state.pasaporteData?.pais || ''}">
+        <label>Nombre completo</label>
+        <input type="text" id="pas-nombre" value="${state.pasaporteData?.nombre || ''}">
+        <label>Fecha de nacimiento</label>
+        <input type="date" id="pas-fnac" value="${state.pasaporteData?.fechaNacimiento || ''}">
+        <label>Vigencia</label>
+        <input type="date" id="pas-vig" value="${state.pasaporteData?.vigencia || ''}">
+      </div>
+
+      <button class="btn btn-primary" id="btn-continuar" style="margin-top:14px;">Continuar a selfie</button>
+      <button class="btn btn-secondary" id="btn-atras" style="margin-top:10px;">Atras</button>
+    </div>
+  `;
+
+  document.getElementById('btn-foto-pas').onclick = () => document.getElementById('file-pas').click();
+  document.getElementById('file-pas').onchange = (e) => {
+    const f = e.target.files[0];
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      state.pasaporteData = { ...(state.pasaporteData || {}), fotoBase64: reader.result };
+      render();
+    };
+    reader.readAsDataURL(f);
+  };
+
+  document.getElementById('btn-continuar').onclick = () => {
+    state.pasaporteData = {
+      ...(state.pasaporteData || {}),
+      numero: document.getElementById('pas-numero').value.trim(),
+      pais: document.getElementById('pas-pais').value.trim(),
+      nombre: document.getElementById('pas-nombre').value.trim(),
+      fechaNacimiento: document.getElementById('pas-fnac').value,
+      vigencia: document.getElementById('pas-vig').value
+    };
+    if (!state.pasaporteData.fotoBase64 || !state.pasaporteData.numero || !state.pasaporteData.nombre || !state.pasaporteData.fechaNacimiento) {
+      alert('Completa todos los campos y sube una foto.');
+      return;
+    }
+    state.fotoINEFrenteBase64 = state.pasaporteData.fotoBase64; // reusamos slot para AWS
+    state.paso = 'selfie';
+    render();
+  };
+
+  document.getElementById('btn-atras').onclick = () => { state.paso = 'identidad'; render(); };
+}
+
+// ============================================================
+// PASO 4: Selfie con cara visible
+// ============================================================
+function renderCapturaSelfie(root) {
+  root.innerHTML = `
+    ${renderProgreso(5)}
+    <div class="card">
+      <div class="card-titulo">Selfie</div>
+      <p style="color:#aaa;font-size:13px;margin-bottom:16px;">
+        Toma una selfie con buena luz para confirmar que eres tu.
+      </p>
+      <div class="captura-wrap">
+        <video id="cam-self" autoplay playsinline style="transform:scaleX(-1);"></video>
+        <div class="captura-overlay">Mirate a la camara</div>
+      </div>
+      <button class="btn btn-primary" id="btn-capturar">Tomar selfie</button>
+      <button class="btn btn-secondary" id="btn-atras" style="margin-top:10px;">Atras</button>
+    </div>
+  `;
+
+  const video = document.getElementById('cam-self');
+  let stream;
+
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } })
+    .then(s => { stream = s; video.srcObject = s; })
+    .catch(() => alert('No se pudo abrir la camara frontal.'));
+
+  document.getElementById('btn-capturar').onclick = () => {
+    if (!stream) return;
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+    state.fotoSelfieBase64 = canvas.toDataURL('image/jpeg', 0.85);
+    stream.getTracks().forEach(t => t.stop());
+    state.paso = 'verificando';
+    render();
+    verificarYContinuar();
+  };
+
+  document.getElementById('btn-atras').onclick = () => {
+    if (stream) stream.getTracks().forEach(t => t.stop());
+    state.paso = state.esMexicano ? 'ine-qr' : 'pasaporte';
+    render();
+  };
+}
+
+// ============================================================
+// PASO 5: Verificacion AWS Rekognition
+// ============================================================
+function renderVerificando(root) {
+  root.innerHTML = `
+    <div class="loading">
+      <div class="spinner"></div>
+      Verificando identidad...
+    </div>
+    <p style="text-align:center;color:#888;font-size:12px;">Esto puede tomar 5-10 segundos.</p>
+  `;
+}
+
+async function verificarYContinuar() {
+  try {
+    if (window.__debugLog) window.__debugLog('verificarYContinuar START authReady=' + authReady);
+    if (!authReady) {
+      if (window.__debugLog) window.__debugLog('Esperando authPromise...');
+      await authPromise;
+      if (window.__debugLog) window.__debugLog('authPromise resolvio');
+    }
+    const scoreMinimo = state.evento?.validacion?.scoreMinimo || 80;
+    if (window.__debugLog) window.__debugLog('Llamando verificarRostro...');
+    const resp = await verificarRostro({
+      fotoReferenciaBase64: state.fotoINEFrenteBase64,
+      fotoIntentoBase64: state.fotoSelfieBase64,
+      scoreMinimo
+    });
+    state.awsScore = resp.data.similitud;
+    if (!resp.data.match) {
+      mostrarErrorVerificacion(resp.data.mensaje || 'Las fotos no coinciden lo suficiente.');
+      return;
+    }
+    state.paso = 'datos-contacto';
+    render();
+  } catch (e) {
+    console.error(e);
+    if (window.__debugLog) window.__debugLog('CATCH verificarRostro: code=' + e.code + ' msg=' + e.message);
+    mostrarErrorVerificacion(e.message || 'Error al verificar.');
+  }
+}
+
+function mostrarErrorVerificacion(msg) {
+  const root = document.getElementById('app');
+  root.innerHTML = `
+    <div class="alerta alerta-error">${escapar(msg)}</div>
+    <button class="btn btn-primary" id="btn-reintentar">Reintentar selfie</button>
+    <button class="btn btn-secondary" id="btn-volver-doc" style="margin-top:10px;">Volver al documento</button>
+  `;
+  document.getElementById('btn-reintentar').onclick = () => { state.paso = 'selfie'; render(); };
+  document.getElementById('btn-volver-doc').onclick = () => {
+    state.paso = state.esMexicano ? 'ine-frente' : 'pasaporte';
+    render();
+  };
+}
+
+// ============================================================
+// PASO 6: Datos de contacto
+// ============================================================
+function renderDatosContacto(root) {
+  root.innerHTML = `
+    ${renderProgreso(6)}
+    <div class="card">
+      <div class="card-titulo">Datos de contacto</div>
+      <p style="color:#aaa;font-size:13px;margin-bottom:16px;">
+        Tu boleto se enviara a este email. Verificalo bien.
+      </p>
+      <label>Nombre completo</label>
+      <input type="text" id="dc-nombre" value="${escapar(state.qrINEData?.curp ? '' : '')}" placeholder="Como aparece en tu identificacion">
+      <label>Email</label>
+      <input type="email" id="dc-email" value="${escapar(state.email)}" placeholder="tu@correo.com">
+      <label>Telefono (opcional)</label>
+      <input type="tel" id="dc-tel" value="${escapar(state.telefono)}">
+      <label>Fecha de nacimiento</label>
+      <input type="date" id="dc-fnac" value="${escapar(state.esMexicano ? '' : (state.pasaporteData?.fechaNacimiento || ''))}">
+
+      <div class="alerta alerta-info" style="margin-top:8px;">
+        Verificacion exitosa con ${state.awsScore || 0}% de similitud.
+      </div>
+
+      <button class="btn btn-primary" id="btn-pagar">Continuar al pago</button>
+      <button class="btn btn-secondary" id="btn-atras" style="margin-top:10px;">Atras</button>
+
+      <p style="color:#666;font-size:11px;margin-top:16px;line-height:1.5;">
+        Al continuar aceptas nuestro Aviso de Privacidad. Tus datos se usan unicamente para verificar tu acceso al evento.
+      </p>
+    </div>
+  `;
+  document.getElementById('btn-pagar').onclick = async () => {
+    const nombre = document.getElementById('dc-nombre').value.trim();
+    const email = document.getElementById('dc-email').value.trim();
+    const tel = document.getElementById('dc-tel').value.trim();
+    const fnac = document.getElementById('dc-fnac').value;
+
+    if (!nombre || !email || !fnac) {
+      alert('Completa nombre, email y fecha de nacimiento.');
+      return;
+    }
+    if (!/^\S+@\S+\.\S+$/.test(email)) {
+      alert('Email invalido.');
+      return;
+    }
+
+    state.email = email;
+    state.telefono = tel;
+
+    state.paso = 'pago';
+    render();
+    iniciarPago({ nombre, email, telefono: tel, fechaNacimiento: fnac });
+  };
+
+  document.getElementById('btn-atras').onclick = () => {
+    state.paso = state.esMexicano ? 'ine-qr' : 'pasaporte';
+    render();
+  };
+}
+
+// ============================================================
+// PASO 7: Crear preferencia y redirigir a MP
+// ============================================================
+function renderPago(root) {
+  root.innerHTML = `
+    <div class="loading">
+      <div class="spinner"></div>
+      Preparando tu pago...
+    </div>
+  `;
+}
+
+async function iniciarPago(datosPersona) {
+  try {
+    if (window.__debugLog) window.__debugLog('iniciarPago START');
+    // 1. Sube fotos a Storage para tener URLs persistentes
+    const ts = Date.now();
+    const folder = `eventos/${state.eventoId}/${ts}`;
+    if (window.__debugLog) window.__debugLog('Subiendo INE+selfie a: ' + folder);
+
+    const [urlIne, urlSelfie] = await Promise.all([
+      subirImagen(`${folder}/ine.jpg`, state.fotoINEFrenteBase64),
+      subirImagen(`${folder}/selfie.jpg`, state.fotoSelfieBase64)
+    ]);
+    if (window.__debugLog) window.__debugLog('Imagenes subidas OK');
+
+    // 2. Construye personaData
+    const personaData = {
+      esMexicano: state.esMexicano,
+      nombre: datosPersona.nombre,
+      email: datosPersona.email,
+      telefono: datosPersona.telefono,
+      fechaNacimiento: datosPersona.fechaNacimiento,
+      fotoINEFrenteURL: urlIne,
+      fotoSelfieURL: urlSelfie,
+      awsRekognitionScore: state.awsScore,
+      aceptoAvisoPrivacidad: true,
+      fechaAceptacionAviso: new Date().toISOString()
+    };
+    if (state.esMexicano && state.qrINEData?.curp) {
+      personaData.curp = state.qrINEData.curp;
+      personaData.qrDataINE = state.qrINEData.raw || null;
+    }
+    if (!state.esMexicano && state.pasaporteData) {
+      personaData.pasaporte = {
+        numero: state.pasaporteData.numero,
+        pais: state.pasaporteData.pais,
+        vigencia: state.pasaporteData.vigencia
+      };
+    }
+
+    // 3. Llama crearPreferencia
+    if (window.__debugLog) window.__debugLog('Llamando crearPreferencia...');
+    const resp = await crearPreferencia({
+      eventoId: state.eventoId,
+      tipoEntradaId: state.tipoEntradaId,
+      cantidad: state.cantidad,
+      personaData,
+      baseUrl: window.location.origin
+    });
+    if (window.__debugLog) window.__debugLog('crearPreferencia respondio OK');
+
+    // 4. Redirige al checkout (sandbox o produccion segun token)
+    const url = resp.data.sandboxInitPoint || resp.data.initPoint;
+    if (!url) throw new Error('MercadoPago no devolvio URL de pago');
+    window.location.href = url;
+  } catch (e) {
+    console.error(e);
+    if (window.__debugLog) window.__debugLog('CATCH iniciarPago: code=' + e.code + ' msg=' + e.message);
+    const root = document.getElementById('app');
+    root.innerHTML = `
+      <div class="alerta alerta-error">Error al iniciar el pago: ${escapar(e.message || 'desconocido')}</div>
+      <button class="btn btn-primary" id="btn-reintentar">Reintentar</button>
+    `;
+    document.getElementById('btn-reintentar').onclick = () => { state.paso = 'datos-contacto'; render(); };
+  }
+}
+
+async function subirImagen(path, base64) {
+  const r = storageRef(storage, path);
+  // uploadString con formato data_url
+  const limpio = base64.startsWith('data:') ? base64 : `data:image/jpeg;base64,${base64}`;
+  await uploadString(r, limpio, 'data_url');
+  return await getDownloadURL(r);
+}
+
+// ============================================================
+// REGRESO DE MERCADOPAGO
+// ============================================================
+function renderEstadoPago(estado) {
+  const root = document.getElementById('app');
+  let titulo, color, mensaje;
+  if (estado === 'success') {
+    titulo = '¡Pago confirmado!';
+    color = 'alerta-exito';
+    mensaje = 'Tu boleto se esta procesando. Recibiras un email con el PDF en los proximos minutos.';
+  } else if (estado === 'pending') {
+    titulo = 'Pago en proceso';
+    color = 'alerta-warn';
+    mensaje = 'Tu pago esta siendo verificado. En cuanto se confirme, te llegara el boleto por email.';
+  } else {
+    titulo = 'Pago no completado';
+    color = 'alerta-error';
+    mensaje = 'No pudimos procesar tu pago. Puedes intentarlo de nuevo.';
+  }
+
+  root.innerHTML = `
+    <div class="card" style="text-align:center;">
+      <h2 style="color:#d4af37;margin-bottom:12px;">${titulo}</h2>
+      <div class="alerta ${color}">${mensaje}</div>
+      <button class="btn btn-primary" id="btn-volver">Volver al evento</button>
+    </div>
+  `;
+  document.getElementById('btn-volver').onclick = () => {
+    window.location.href = `?evento=${state.eventoId || ''}`;
+  };
+}
+
+// ============================================================
+// HELPERS
+// ============================================================
+function escapar(s) {
+  if (s === null || s === undefined) return '';
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function formatearFecha(iso) {
+  if (!iso) return 'Fecha por confirmar';
+  try {
+    const f = new Date(iso);
+    return f.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  } catch (e) { return iso; }
+}
+
+function renderError(msg) {
+  document.getElementById('app').innerHTML = `<div class="alerta alerta-error">${escapar(msg)}</div>`;
+}
+
+// Expone globalmente para debugging
+window._santiantz = { state, render };
+</script>
+
+<!-- jsQR para escaneo del QR del INE -->
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+
+</body>
+</html>

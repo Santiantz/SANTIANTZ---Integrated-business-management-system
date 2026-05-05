@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BARRA — CostControl</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0a08;--bg2:#141410;--bg3:#1e1e1a;--gold:#e8c87a;--white:#f0ede6;--gray:#888880;--verde:#4caf7d;--rojo:#e05252;--naranja:#e08a3c;--azul:#4c8fe0;--morado:#8c6de0;--borde:rgba(232,200,122,.1);--r:12px;--r2:8px;--font:'DM Sans','Segoe UI',sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--white);font-family:var(--font);overflow:hidden}
+button{font-family:var(--font);cursor:pointer;border:none;outline:none}
+.kds-header{height:56px;background:var(--bg2);border-bottom:1px solid var(--borde);display:flex;align-items:center;padding:0 20px;gap:16px;flex-shrink:0}
+.kds-logo{font-size:11px;font-weight:800;letter-spacing:3px;color:var(--azul);text-transform:uppercase}
+.kds-titulo{font-size:16px;font-weight:800}
+.kds-reloj{font-size:20px;font-weight:800;font-family:monospace;color:var(--gold);margin-left:auto}
+.kds-cnt{background:rgba(76,143,224,.12);color:var(--azul);border:1px solid rgba(76,143,224,.3);border-radius:10px;font-size:11px;font-weight:700;padding:3px 10px}
+.body-wrap{display:flex;flex-direction:column;height:100vh}
+.kds-grid{flex:1;overflow-y:auto;padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;align-content:start}
+/* Comanda */
+.com-card{background:var(--bg2);border:2px solid var(--borde);border-radius:var(--r);overflow:hidden;transition:border-color .3s}
+.com-card.urgente{border-color:var(--rojo);animation:parpadeo 1.5s ease-in-out infinite}
+.com-card.en_proceso{border-color:var(--azul)}
+@keyframes parpadeo{0%,100%{border-color:var(--rojo)}50%{border-color:rgba(224,82,82,.2)}}
+.cc-h{padding:11px 13px;border-bottom:1px solid var(--borde);display:flex;align-items:center;gap:8px}
+.cc-mesa{font-size:15px;font-weight:800}
+.cc-mes{font-size:10px;color:var(--gray);flex:1}
+.cc-timer{font-size:11px;font-weight:700;font-family:monospace;padding:3px 7px;border-radius:6px;background:var(--bg3)}
+.cc-timer.ok{color:var(--verde)}.cc-timer.adv{color:var(--naranja)}.cc-timer.urg{color:var(--rojo)}
+.cc-body{padding:10px 13px}
+.cc-it{display:flex;gap:8px;align-items:flex-start;padding:5px 0;border-bottom:1px solid var(--borde)}
+.cc-it:last-child{border:none}
+.cc-cant{font-size:20px;font-weight:900;color:var(--gold);min-width:26px;line-height:1}
+.cc-nom{font-size:13px;font-weight:700;line-height:1.2}
+.cc-mod{font-size:10px;color:var(--azul);margin-top:2px;line-height:1.4}
+.cc-foot{padding:9px 13px;border-top:1px solid var(--borde);display:flex;gap:7px}
+.cc-btn{flex:1;padding:8px;border-radius:var(--r2);font-size:12px;font-weight:700;transition:all .15s}
+.btn-proc{background:rgba(76,143,224,.12);color:var(--azul);border:1px solid rgba(76,143,224,.25)}
+.btn-proc:hover{background:var(--azul);color:#fff}
+.btn-listo{background:rgba(76,175,125,.12);color:var(--verde);border:1px solid rgba(76,175,125,.25)}
+.btn-listo:hover{background:var(--verde);color:#fff}
+.kds-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--gray);gap:10px}
+.kds-empty-ico{font-size:60px;opacity:.3}
+#kds-login{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:100}
+.lc{background:var(--bg2);border:1px solid var(--borde);border-radius:16px;padding:28px;max-width:300px;width:100%;display:flex;flex-direction:column;gap:12px}
+.lt{font-size:17px;font-weight:800;text-align:center}
+input{font-family:var(--font);background:var(--bg3);color:var(--white);border:1px solid var(--borde);border-radius:var(--r2);padding:10px 14px;width:100%;font-size:14px;outline:none}
+input:focus{border-color:var(--gold)}
+.lb{padding:10px;border-radius:var(--r2);font-size:13px;font-weight:700;width:100%;background:var(--gold);color:#000}
+.le{font-size:11px;color:var(--rojo);text-align:center;display:none}
+.nf-btn{padding:5px 11px;border-radius:9px;background:transparent;border:1px solid var(--borde);color:var(--gray);font-size:11px}
+.nf-btn.on{border-color:var(--verde);color:var(--verde)}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:2px}
+</style>
+</head>
+<body>
+<div id="kds-login">
+  <div class="lc">
+    <div style="font-size:36px;text-align:center">&#127867;</div>
+    <div class="lt">Pantalla Barra</div>
+    <input type="email" id="kds-em" placeholder="Correo">
+    <input type="password" id="kds-pw" placeholder="Contrase&#241;a">
+    <div class="le" id="kds-er"></div>
+    <button class="lb" onclick="loginKDS()">Entrar</button>
+  </div>
+</div>
+<div class="body-wrap" id="kds-app" style="display:none">
+  <div class="kds-header">
+    <div class="kds-logo">&#127867; Barra</div>
+    <div class="kds-titulo" id="kds-suc">Cargando...</div>
+    <div class="kds-cnt" id="kds-cnt">0 pendientes</div>
+    <button class="nf-btn" id="btn-nf" onclick="toggleNF()">&#128276; Sonido</button>
+    <div class="kds-reloj" id="reloj">00:00</div>
+  </div>
+  <div class="kds-grid" id="kds-grid">
+    <div class="kds-empty"><div class="kds-empty-ico">&#127867;</div><div>Esperando pedidos...</div></div>
+  </div>
+</div>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script>
+/* KDS Barra — cero backticks */
+firebase.initializeApp({
+  apiKey:'AIzaSyDXxnBB0Q4bnBSTJMBzLymbA3q9xtMne0o',
+  authDomain:'admon-santiantz.firebaseapp.com',
+  projectId:'admon-santiantz',
+  storageBucket:'admon-santiantz.firebasestorage.app'
+});
+var db=firebase.firestore();
+var auth=firebase.auth();
+if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+  try {
+    db.useEmulator('localhost', 8080);
+    auth.useEmulator('http://localhost:9099');
+  } catch(e) {}
+}
+var KDS={negocioId:null,sucursalId:null,comandas:[],unsub:null,sonido:true};
+var SMAP={BARBAROCLUBHOUSE:{negocio:'BARBAROCLUBHOUSE',nombre:'BARBARO'},MANOUK:{negocio:'THE_TURF_SOCIAL_CLUB',nombre:'MANOUK'},TONI2:{negocio:'THE_TURF_SOCIAL_CLUB',nombre:'TONI2'},THE_BOURBON_ROOM:{negocio:'THE_TURF_SOCIAL_CLUB',nombre:'THE BOURBON'},STUDIO_54:{negocio:'THE_TURF_SOCIAL_CLUB',nombre:'STUDIO 54'}};
+
+// Helper anti-XSS
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+
+setInterval(function(){var n=new Date();var e=document.getElementById('reloj');if(e)e.textContent=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');},1000);
+setInterval(updateTimers,10000);
+
+auth.onAuthStateChanged(function(u){
+  if(!u)return;
+  document.getElementById('kds-login').style.display='none';
+  document.getElementById('kds-app').style.display='flex';
+  var suc=sessionStorage.getItem('pos_sucursal')||'BARBAROCLUBHOUSE';
+  var s=SMAP[suc]||SMAP.BARBAROCLUBHOUSE;
+  KDS.sucursalId=suc;KDS.negocioId=s.negocio;
+  document.getElementById('kds-suc').innerHTML='&#127867; '+esc(s.nombre);
+  suscribir();
+});
+
+function loginKDS(){
+  var er=document.getElementById('kds-er');er.style.display='none';
+  auth.signInWithEmailAndPassword(document.getElementById('kds-em').value,document.getElementById('kds-pw').value)
+    .catch(function(){er.textContent='Credenciales incorrectas';er.style.display='block';});
+}
+
+function suscribir(){
+  if(KDS.unsub)KDS.unsub();
+  KDS.unsub=db.collection('comandas')
+    .where('negocioId','==',KDS.negocioId)
+    .where('destino','==','barra')
+    .where('status','in',['pendiente','en_proceso'])
+    .orderBy('creadoEn','asc')
+    .onSnapshot(function(snap){
+      var prev=KDS.comandas.length;
+      KDS.comandas=[];
+      snap.forEach(function(d){var c=d.data();c.id=d.id;if(!KDS.sucursalId||c.sucursalId===KDS.sucursalId)KDS.comandas.push(c);});
+      var el=document.getElementById('kds-cnt');
+      if(el)el.textContent=KDS.comandas.length+' pendiente'+(KDS.comandas.length!==1?'s':'');
+      render();
+      if(KDS.comandas.length>prev)sonido();
+    });
+}
+
+function render(){
+  var g=document.getElementById('kds-grid');
+  if(!KDS.comandas.length){g.innerHTML='<div class="kds-empty"><div class="kds-empty-ico">&#127867;</div><div>La barra est\u00e1 al d\u00eda</div></div>';return;}
+  g.innerHTML='';
+  KDS.comandas.forEach(function(c){g.appendChild(mkCard(c));});
+}
+
+function mkCard(c){
+  var now=Date.now();
+  var cre=c.creadoEn?(c.creadoEn.toDate?c.creadoEn.toDate().getTime():now):now;
+  var min=Math.floor((now-cre)/60000);
+  var seg=Math.floor(((now-cre)%60000)/1000);
+  var urg=min>=10;var adv=min>=5&&!urg;
+  var tc=urg?'urg':adv?'adv':'ok';
+  var div=document.createElement('div');
+  div.className='com-card'+(urg?' urgente':c.status==='en_proceso'?' en_proceso':'');
+  div.id='crd-'+c.id;
+  var its='';
+  (c.items||[]).forEach(function(it){
+    its+='<div class="cc-it"><div class="cc-cant">'+(it.cantidad||1)+'</div><div><div class="cc-nom">'+esc(it.nombre||'')+'</div>'+(it.modsTexto?'<div class="cc-mod">'+esc(it.modsTexto)+'</div>':'')+'</div></div>';
+  });
+  var proc=c.status==='pendiente'?'<button class="cc-btn btn-proc" onclick="enProc(\''+esc(c.id)+'\')">Preparando</button>':'';
+  div.innerHTML='<div class="cc-h"><div class="cc-mesa">'+esc(c.mesaNombre||'Mesa')+'</div><div class="cc-mes">'+esc(c.mesero||'')+'</div><div class="cc-timer '+tc+'">'+min+':'+String(seg).padStart(2,'0')+' min</div></div>'+
+    '<div class="cc-body">'+its+'</div>'+
+    '<div class="cc-foot">'+proc+'<button class="cc-btn btn-listo" onclick="listo(\''+esc(c.id)+'\')">&#10003; Listo</button></div>';
+  return div;
+}
+
+function updateTimers(){
+  KDS.comandas.forEach(function(c){
+    var el=document.getElementById('crd-'+c.id);if(!el)return;
+    var t=el.querySelector('.cc-timer');if(!t)return;
+    var now=Date.now();var cre=c.creadoEn?(c.creadoEn.toDate?c.creadoEn.toDate().getTime():now):now;
+    var min=Math.floor((now-cre)/60000);var seg=Math.floor(((now-cre)%60000)/1000);
+    t.textContent=min+':'+String(seg).padStart(2,'0')+' min';
+    t.className='cc-timer '+(min>=10?'urg':min>=5?'adv':'ok');
+    if(min>=10)el.classList.add('urgente');
+  });
+}
+
+function enProc(id){db.collection('comandas').doc(id).update({status:'en_proceso',enProcesoEn:firebase.firestore.FieldValue.serverTimestamp()});}
+function listo(id){db.collection('comandas').doc(id).update({status:'listo',listoEn:firebase.firestore.FieldValue.serverTimestamp()});}
+
+function toggleNF(){
+  KDS.sonido=!KDS.sonido;
+  var b=document.getElementById('btn-nf');
+  b.classList.toggle('on',KDS.sonido);
+  b.innerHTML=KDS.sonido?'&#128276; Sonido':'&#128277; Silencio';
+}
+
+function sonido(){
+  if(!KDS.sonido)return;
+  try{
+    var ctx=new(window.AudioContext||window.webkitAudioContext)();
+    [330,440].forEach(function(f,i){
+      var o=ctx.createOscillator();var g=ctx.createGain();
+      o.connect(g);g.connect(ctx.destination);
+      o.frequency.value=f;o.type='sine';
+      g.gain.setValueAtTime(0,ctx.currentTime+i*0.2);
+      g.gain.linearRampToValueAtTime(0.25,ctx.currentTime+i*0.2+0.05);
+      g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+i*0.2+0.3);
+      o.start(ctx.currentTime+i*0.2);o.stop(ctx.currentTime+i*0.2+0.3);
+    });
+  }catch(e){}
+}
+</script>
+</body>
+</html>

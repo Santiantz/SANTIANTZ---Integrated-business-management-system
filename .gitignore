@@ -1,0 +1,89 @@
+# ===== Dependencias =====
+node_modules/
+**/node_modules/
+
+# ===== Firebase =====
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+
+# ===== Variables de entorno y secretos =====
+.env
+.env.local
+.env.*.local
+**/.env
+**/.env.backup_*
+
+# ===== Backups generados durante ediciones =====
+*.backup
+*.backup_*
+*.broken
+*.broken_*
+**/*.backup
+**/*.backup_*
+**/*.broken
+**/*.broken_*
+
+# ===== Backups del proyecto cashless =====
+_backups_cashless/
+
+# ===== Sistema operativo =====
+.DS_Store
+**/.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# ===== Editores =====
+.vscode/
+.idea/
+.claude/
+*.sublime-*
+
+# ===== Logs y caches =====
+*.log
+.cache/
+
+# ===== Scripts sueltos / debug histórico =====
+patch_nom.py
+patch2.py
+patch3.py
+patch4.py
+patch_catalogo_1.py
+patch_catalogo_2.py
+fix_render_catalogo.py
+inspect.js
+inspect2.js
+crear-propietario.js
+seed-pos.js
+seed-santiantz-events.js
+test-emulator.js
+test-rules-eval.js
+test-rules.js
+validate-pos.js
+
+# ===== Documentación interna =====
+REVIEW_*.md
+MANIFEST_POS.md
+POS_INTEGRATION_SUMMARY.md
+CLAUDE.md
+cashless_PLAN.md
+cashless_REGLAS_PROPUESTAS.md
+
+# ===== Archivos viejos en raíz =====
+firestore.rules.PRODUCCION_ACTUAL.txt
+*.zip
+santiantz-arreglado/
+santiantz-arreglado*
+{public,src}/
+
+# ===== package.json del raíz (no es del proyecto, son scripts sueltos) =====
+/package.json
+/package-lock.json
+
+# ===== Backups con número directo (sin guion) =====
+*.backup[0-9]
+*.backup[0-9][0-9]
+**/*.backup[0-9]
+**/*.backup[0-9][0-9]
