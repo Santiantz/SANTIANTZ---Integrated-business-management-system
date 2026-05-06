@@ -1,6 +1,15 @@
 const { onCall, HttpsError, onRequest } = require('firebase-functions/v2/https');
 const { onSchedule } = require('firebase-functions/v2/scheduler');
+const { randomUUID } = require('crypto');
 const admin = require('firebase-admin');
+const {
+  TENANT_ID,
+  RECARGA_MIN_CENTAVOS,
+  RECARGA_MAX_CENTAVOS,
+  validarMontoEntero,
+  validarWalletActivaNoExpirada
+} = require('./cashless_helpers');
+const { escribirLedger } = require('./cashless_ledger');
 
 if (!admin.apps.length) {
   admin.initializeApp();
@@ -11,14 +20,8 @@ const db = admin.firestore();
 /**
  * Inicia una recarga de billetera en efectivo
  *
- * FASE 2: Implementará:
- * - Validar monto en centavos (mínimo 1000 centavos = $10.00 MXN)
- * - Crear documento en cashless_recargas con estado='pendiente_pago'
- * - Generar referencia único para taquilla
- * - Devolver referencia y código de confirmación
- *
- * @param {Object} request - {walletId, montoMxn, tenantId}
- * @returns {Object} {ok: true, recargaId: '...', referencia: '...', estado: 'pendiente_pago'}
+ * @param {Object} request - {walletId, montoCentavos, notas?}
+ * @returns {Object} {ok: true, recargaId, saldoNuevoCentavos}
  */
 exports.iniciarRecargaEfectivo = onCall(
   { region: 'us-east1', memory: '512MiB', timeoutSeconds: 30 },
@@ -29,16 +32,101 @@ exports.iniciarRecargaEfectivo = onCall(
       throw new HttpsError('unauthenticated', 'Debes iniciar sesion para usar esta funcion.');
     }
 
-    const { walletId, montoMxn } = request.data;
-    console.log('[iniciarRecargaEfectivo] Invocacion por uid:', uid, 'walletId:', walletId, 'monto:', montoMxn);
+    const { walletId, montoCentavos, notas } = request.data;
 
-    // FASE 2: Lógica real aquí
-    return {
-      ok: true,
-      recargaId: 'TODO_GENERAR_ID',
-      referencia: 'TODO_GENERAR_REFERENCIA',
-      estado: 'pendiente_pago'
-    };
+    if (!walletId || typeof montoCentavos !== 'number') {
+      throw new HttpsError('invalid-argument', 'Faltan campos requeridos: walletId, montoCentavos');
+    }
+
+    console.log('[iniciarRecargaEfectivo] Invocacion por uid:', uid, 'walletId:', walletId, 'monto:', montoCentavos);
+
+    try {
+      // Validar monto
+      validarMontoEntero(montoCentavos, RECARGA_MIN_CENTAVOS, RECARGA_MAX_CENTAVOS);
+
+      // Usar transacción para atomicidad
+      const resultado = await db.runTransaction(async (transaction) => {
+        // Leer wallet
+        const walletRef = db.collection('cashless_wallets').doc(walletId);
+        const walletSnap = await transaction.get(walletRef);
+
+        if (!walletSnap.exists) {
+          throw new HttpsError('not-found', 'Wallet no encontrada');
+        }
+
+        const wallet = walletSnap.data();
+
+        // Validar que wallet está activa y no expirada
+        validarWalletActivaNoExpirada(wallet);
+
+        // Calcular nuevo saldo
+        const saldoAntes = wallet.saldoCentavos;
+        const saldoDespues = saldoAntes + montoCentavos;
+
+        // Generar ID para la recarga
+        const recargaId = randomUUID();
+
+        // Crear documento en cashless_recargas
+        const recargaRef = db.collection('cashless_recargas').doc(recargaId);
+        const recargaData = {
+          recargaId,
+          tenantId: TENANT_ID,
+          walletId,
+          eventoId: wallet.eventoId,
+          negocioId: wallet.negocioId,
+          personaId: wallet.personaId,
+          montoCentavos,
+          metodoPago: 'efectivo',
+          saldoAntesCentavos: saldoAntes,
+          saldoDespuesCentavos: saldoDespues,
+          cajeroUid: uid,
+          notas: notas || null,
+          timestamp: admin.firestore.FieldValue.serverTimestamp(),
+          cancelada: false
+        };
+
+        transaction.set(recargaRef, recargaData);
+
+        // Actualizar wallet
+        transaction.update(walletRef, {
+          saldoCentavos: saldoDespues,
+          totalRecargadoCentavos: wallet.totalRecargadoCentavos + montoCentavos,
+          fechaUltimoMovimiento: admin.firestore.FieldValue.serverTimestamp()
+        });
+
+        // Escribir ledger
+        escribirLedger(transaction, {
+          tipo: 'recarga_efectivo',
+          walletId,
+          montoCentavos,
+          saldoAntesCentavos: saldoAntes,
+          saldoDespuesCentavos: saldoDespues,
+          refDocId: recargaId,
+          refColeccion: 'cashless_recargas',
+          actorUid: uid,
+          metadata: { metodoPago: 'efectivo' }
+        });
+
+        return {
+          recargaId,
+          saldoNuevoCentavos: saldoDespues
+        };
+      });
+
+      console.log('[iniciarRecargaEfectivo] Recarga creada:', resultado.recargaId);
+
+      return {
+        ok: true,
+        recargaId: resultado.recargaId,
+        saldoNuevoCentavos: resultado.saldoNuevoCentavos
+      };
+    } catch (error) {
+      console.error('[iniciarRecargaEfectivo] Error:', error);
+      if (error instanceof HttpsError) {
+        throw error;
+      }
+      throw new HttpsError('internal', 'Error al procesar recarga: ' + error.message);
+    }
   }
 );
 

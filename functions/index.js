@@ -52,3 +52,12 @@ exports.crearPreferencia = require('./crearPreferencia').crearPreferencia;
 exports.webhookMP = require('./webhookMP').webhookMP;
 exports.generarBoleto = require('./generarBoleto').generarBoleto;
 exports.enviarEmail = require('./enviarEmail').enviarEmail;
+
+// ============================================================
+// CASHLESS - Fase 2A: Lógica core de wallets
+// ============================================================
+exports.crearWalletCashless = require('./cashless_wallets').crearWalletCashless;
+exports.consultarWalletPorQR = require('./cashless_wallets').consultarWalletPorQR;
+exports.iniciarRecargaEfectivo = require('./cashless_recargas').iniciarRecargaEfectivo;
+exports.registrarConsumo = require('./cashless_consumos').registrarConsumo;
+exports.cancelarConsumo = require('./cashless_consumos').cancelarConsumo;
