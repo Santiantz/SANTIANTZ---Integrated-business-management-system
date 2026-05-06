@@ -47,14 +47,14 @@ exports.crearWalletCashless = onCall(
       }
       const evento = eventoSnap.data();
 
-      // Validar que evento está activo
-      if (evento.estado !== 'activo') {
-        throw new HttpsError('failed-precondition', `Evento no está activo. Estado: ${evento.estado}`);
+      // Validar que evento está activo (campo correcto: status, no estado)
+      if (evento.status !== 'activo') {
+        throw new HttpsError('failed-precondition', `Evento no esta activo. Estado: ${evento.status}`);
       }
 
-      // Validar que evento tiene campos requeridos
+      // Validar que evento tiene campos requeridos para cashless
       if (!evento.fechaFin || typeof evento.diasGracia !== 'number') {
-        throw new HttpsError('failed-precondition', 'Evento no tiene fechaFin o diasGracia configurados');
+        throw new HttpsError('failed-precondition', 'Evento no tiene fechaFin o diasGracia configurados. Estos campos son requeridos para crear wallets cashless.');
       }
 
       // Verificar que no existe wallet activa para esta persona y evento
@@ -69,11 +69,11 @@ exports.crearWalletCashless = onCall(
         throw new HttpsError('failed-precondition', 'Ya existe una wallet activa para esta persona en este evento');
       }
 
-      // Calcular fecha de expiración
+      // Calcular fecha de expiracion: fechaFin + diasGracia
       const fechaFinMs = evento.fechaFin.toMillis ? evento.fechaFin.toMillis() : evento.fechaFin;
       const walletExpiraEn = fechaFinMs + (evento.diasGracia * 86400000);
 
-      // Generar IDs únicos
+      // Generar IDs unicos
       const walletId = randomUUID();
       const qrCode = randomUUID();
 
@@ -88,7 +88,8 @@ exports.crearWalletCashless = onCall(
         boletoId,
         usuarioUid,
         personaNombre: persona.nombre || '',
-        personaFotoURL: persona.fotoURL || null,
+        personaFotoSelfieURL: persona.fotoSelfieURL || null,
+        personaFotoINEURL: persona.fotoINEFrenteURL || null,
         qrCode,
         saldoCentavos: 0,
         totalRecargadoCentavos: 0,
@@ -100,7 +101,7 @@ exports.crearWalletCashless = onCall(
         creadoPorUid: uid
       };
 
-      // Usar transacción para crear wallet y escribir ledger atomicamente
+      // Usar transaccion para crear wallet y escribir ledger atomicamente
       await db.runTransaction(async (transaction) => {
         transaction.set(walletRef, walletData);
 
@@ -137,10 +138,10 @@ exports.crearWalletCashless = onCall(
 );
 
 /**
- * Consulta el saldo de una billetera por código QR
+ * Consulta el saldo de una billetera por codigo QR
  *
  * @param {Object} request - {qrCode}
- * @returns {Object} {ok: true, walletId, saldoCentavos, status, personaNombre, personaFotoURL, walletExpiraEn}
+ * @returns {Object} {ok: true, walletId, saldoCentavos, status, personaNombre, personaFotoSelfieURL, personaFotoINEURL, walletExpiraEn}
  */
 exports.consultarWalletPorQR = onCall(
   { region: 'us-east1', memory: '512MiB', timeoutSeconds: 30 },
@@ -173,7 +174,7 @@ exports.consultarWalletPorQR = onCall(
       const walletDoc = walletSnap.docs[0];
       const wallet = walletDoc.data();
 
-      // Verificar expiración: si está vencida y activa, marcar como expirada
+      // Verificar expiracion: si esta vencida y activa, marcar como expirada
       const ahora = Date.now();
       if (wallet.status === 'activa' && ahora > wallet.walletExpiraEn) {
         await walletDoc.ref.update({
@@ -188,7 +189,8 @@ exports.consultarWalletPorQR = onCall(
         saldoCentavos: wallet.status === 'expirada' ? 0 : wallet.saldoCentavos,
         status: wallet.status,
         personaNombre: wallet.personaNombre,
-        personaFotoURL: wallet.personaFotoURL,
+        personaFotoSelfieURL: wallet.personaFotoSelfieURL || null,
+        personaFotoINEURL: wallet.personaFotoINEURL || null,
         walletExpiraEn: wallet.walletExpiraEn
       };
     } catch (error) {
